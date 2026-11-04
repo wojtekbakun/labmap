@@ -246,7 +246,7 @@ body.offline .live .dot { color: var(--crit); animation: none; }
   <main>
     <section class="stage" aria-labelledby="map-title">
       <div class="stage-bar">
-        <h2 id="map-title">Homelab map</h2>
+        <h2 id="map-title">Server map</h2>
       </div>
       <div id="map"></div>
     </section>
@@ -479,7 +479,7 @@ function setPrivacy(v) {
 }
 document.getElementById('privacy').addEventListener('click', () => setPrivacy(!privateMode));
 
-// --- the homelab map --------------------------------------------------------------------------
+// --- the server map ----------------------------------------------------------------------------
 function serviceLine(x) {
   const d = x.data || {};
   if (x.type === 'immich' && d.stats) return `${fmt(d.stats.photos)} photos · ${fmt(d.stats.videos)} videos`;
@@ -709,7 +709,7 @@ function drawMap(s) {
   const width = box.clientWidth;
   const L = width >= 1000 ? wideLayout(s) : narrowLayout(s, width);
   const svg = sv('svg', {viewBox: `0 0 ${L.w} ${L.h}`, class: L.small ? 'narrow' : null, role: 'group',
-    'aria-label': 'Homelab map: the server, networks, RAID and apps'});
+    'aria-label': 'Server map: the server, networks, RAID and apps'});
   const phase = `-${(Date.now() % 900) / 1000}s`;  // the animation doesn't jump on refresh
   for (const [t, x, y, anchor] of L.zones) svg.append(sv('text', {class: 'zone', x, y, 'text-anchor': anchor || null, 'aria-hidden': 'true'}, t));
   for (const p of L.wires) drawWire(svg, p, phase);
@@ -1214,7 +1214,7 @@ function setBrandState(state) {
 }
 function render(s) {
   const h = s.host || {};
-  document.getElementById('hostname').textContent = h.name || 'LabMap';
+  // the header always shows the product name; the server's name goes into the tab title
   document.title = h.name ? `${h.name} · LabMap` : 'LabMap';
   const alerts = s.alerts || [];
   setBrandState(alerts.some(a => a.level === 'error') ? 'error' : alerts.some(a => a.level === 'warning') ? 'warning' : 'ok');

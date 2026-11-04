@@ -61,6 +61,7 @@ h1 { font-size: clamp(40px, 7vw, 72px); line-height: 1.02; letter-spacing: -.035
 .btn-ghost { border-color: var(--hero-line); color: var(--hero-ink); }
 .btn-ghost:hover { border-color: var(--hero-ink-2); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn-demo i { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px rgba(18, 179, 18, .18); flex: none; }
 .shot { margin: 18px auto -1px; max-width: 1000px; border-radius: 16px 16px 0 0; border: 1px solid var(--hero-line); border-bottom: 0; overflow: hidden; box-shadow: 0 -20px 80px -30px rgba(57, 135, 229, .35); }
 
 /* sections */
@@ -97,6 +98,29 @@ pre { margin: 0; background: var(--hero); color: var(--hero-ink); border-radius:
 pre .c { color: #6b7482; }
 .req { margin: 18px 0 0; font-size: 14.5px; color: var(--ink-3); }
 
+/* the live demo in a browser window */
+.demo { padding-top: 0; }
+.browser { margin-top: 40px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.browser-bar { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.browser-dots { display: flex; gap: 7px; flex: none; }
+.browser-dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--ink-3); opacity: .35; }
+.browser-url { flex: 1; min-width: 0; text-align: center; font: 600 13px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--ink-3);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browser-open { flex: none; font-size: 13.5px; font-weight: 700; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.browser-open:hover { text-decoration: underline; }
+.browser-view { position: relative; aspect-ratio: 1280 / 800; overflow: hidden; background: var(--bg); }
+.browser-view iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; display: block; }
+.demo-note { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 16px 0 0; padding: 0; list-style: none; font-size: 14.5px; color: var(--ink-3); }
+.demo-note li { display: flex; gap: 8px; align-items: flex-start; }
+.demo-note li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex: none; margin-top: .62em; }
+.demo-phone { display: none; margin-top: 32px; }
+.demo-phone a.media { position: relative; display: block; }
+.demo-phone .btn { margin-top: 16px; width: 100%; justify-content: center; background: var(--accent); color: #fff; }
+@media (max-width: 760px) {
+  .browser, .demo-wide { display: none; }
+  .demo-phone { display: block; }
+}
+
 footer { padding: 40px 0 56px; color: var(--ink-3); font-size: 14px; }
 .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
 .foot .brand { color: var(--ink); font-size: 18px; }
@@ -126,6 +150,7 @@ footer { padding: 40px 0 56px; color: var(--ink-3); font-size: 14px; }
       <a class="brand" href="#"><img src="assets/labmap-icon-outline.svg" alt="">LabMap</a>
       <div class="nav-links">
         <a href="#features">Features</a>
+        <a href="#demo">Demo</a>
         <a href="#start">Get started</a>
         <a class="gh" href="https://github.com/wojtekbakun/labmap" data-repo>GitHub</a>
       </div>
@@ -139,6 +164,7 @@ footer { padding: 40px 0 56px; color: var(--ink-3); font-size: 14px; }
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
           View on GitHub
         </a>
+        <a class="btn btn-ghost btn-demo" href="demo/"><i aria-hidden="true"></i>Try the live demo</a>
         <a class="btn btn-ghost" href="#start">Install in one command</a>
       </div>
     </div>
@@ -208,6 +234,35 @@ footer { padding: 40px 0 56px; color: var(--ink-3); font-size: 14px; }
     </div>
   </section>
 
+  <section class="demo" id="demo">
+    <div class="wrap">
+      <div class="eyebrow">Live demo</div>
+      <h2>Click around a demo server.</h2>
+      <p class="section-lead">This is the real LabMap page, running in your browser against a made-up laptop server. Open the networks to run a speed test, then flip <b>Simulate a failure</b> in the corner and watch the broken parts light up.</p>
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="browser-url">http://labmap-demo.local/</div>
+          <a class="browser-open" href="demo/" target="_blank" rel="noopener">Open full screen ↗</a>
+        </div>
+        <div class="browser-view" id="demo-view">
+          <iframe id="demo-frame" data-src="demo/" title="LabMap live demo with fake data" loading="lazy"></iframe>
+        </div>
+      </div>
+      <ul class="demo-note demo-wide">
+        <li>Hover and click work – every box opens its details</li>
+        <li>All data is fake and stays in your browser</li>
+      </ul>
+      <div class="demo-phone">
+        <a class="media" href="demo/"><img src="assets/failure.png" width="1360" height="800" loading="lazy" alt="The LabMap demo: a failed RAID disk and a stopped app glow red"></a>
+        <a class="btn" href="demo/">Open the live demo</a>
+        <ul class="demo-note">
+          <li>Fake data – it runs in your browser</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <section class="start" id="start">
     <div class="wrap start-grid">
       <div>
@@ -234,5 +289,21 @@ http://&lt;server&gt;/</pre>
     <a href="https://github.com/wojtekbakun/labmap" data-repo>GitHub →</a>
   </div>
 </footer>
+<script>
+// The demo renders at 1280 × 800 (the app's wide layout) and is scaled down to fit; phones get a link instead.
+(function () {
+  var view = document.getElementById('demo-view'), frame = document.getElementById('demo-frame');
+  var wide = window.matchMedia('(min-width: 761px)');
+  function fit() { frame.style.transform = 'scale(' + view.clientWidth / 1280 + ')'; }
+  function load() {
+    if (!wide.matches || frame.getAttribute('src')) return;
+    frame.setAttribute('src', frame.getAttribute('data-src'));
+  }
+  fit();
+  load();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(view); else window.addEventListener('resize', fit);
+  if (wide.addEventListener) wide.addEventListener('change', load);
+})();
+</script>
 </body>
 </html>

@@ -4,3 +4,4 @@ logins.json
 secrets.json
 __pycache__/
 *.pyc
+_site/

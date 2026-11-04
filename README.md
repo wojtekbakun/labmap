@@ -7,6 +7,8 @@
 
 **A live map of your home server.** One glance tells you everything is fine, and one click tells you why it isn't.
 
+<p align="center"><b><a href="https://wojtekbakun.github.io/labmap/demo/">▶ Try the live demo</a></b> · <a href="https://wojtekbakun.github.io/labmap/">Website</a></p>
+
 ![The map: networks on top, data on the left, services on the right, the machine in the middle](docs/map.gif)
 
 Most homelab dashboards are a grid of links or a wall of graphs. This one shows how your server is put together: the networks above it, the disks next to it, the apps it runs, and the machine itself in the middle. Every part has a status dot. When something breaks, **that part of the map lights up** yellow or red. Click it to see what happened and what to do.
@@ -131,4 +133,4 @@ The installer creates `/etc/labmap.env` and `services.json` from the examples, i
 
 [MIT](LICENSE)
 
-<sub>Screenshots use demo data.</sub>
+<sub>Screenshots use the demo's made-up data. To record them again after a change: `pip install websockets pillow`, then `python3 tools/screenshots.py` (needs Google Chrome and ffmpeg).</sub>
