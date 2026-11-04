@@ -1,0 +1,45 @@
+{
+  "_how_to": [
+    "Add an app as another { } entry at the end of the \"services\" list, separated from the previous one by a comma. Then refresh LabMap – no restart needed.",
+    "Fields: name (required), description, port or address (e.g. \"smb://{host}/media\" – {host} becomes the server's address), path (e.g. \"/admin\"), https: true (if the app only works over https), icon (photos, cloud, folder, film, music, home, chart, server, app), color (e.g. \"#10b981\"), containers (a list of Docker container names whose state the app shows).",
+    "\"type\" adds extras for Immich, Nextcloud and Samba – leave it out for other apps.",
+    "Docker apps with a published port that aren't listed here show up on their own."
+  ],
+  "services": [
+    {
+      "name": "Immich",
+      "description": "Photos and videos from everyone's phones",
+      "port": 2283,
+      "icon": "photos",
+      "color": "#f59e0b",
+      "type": "immich",
+      "containers": ["immich_server", "immich_machine_learning", "immich_postgres", "immich_redis"]
+    },
+    {
+      "name": "Nextcloud",
+      "description": "Files in the browser and on the phone",
+      "port": 8081,
+      "icon": "cloud",
+      "color": "#0ea5e9",
+      "type": "nextcloud",
+      "containers": ["nextcloud-app-1", "nextcloud-db-1", "nextcloud-redis-1"]
+    },
+    {
+      "name": "Samba",
+      "description": "Network drive for Finder and Explorer",
+      "address": "smb://{host}/media",
+      "icon": "folder",
+      "color": "#8b5cf6",
+      "type": "samba",
+      "containers": ["samba"]
+    },
+    {
+      "name": "Jellyfin",
+      "description": "Movies and shows",
+      "port": 8096,
+      "icon": "film",
+      "color": "#10b981",
+      "containers": ["jellyfin"]
+    }
+  ]
+}

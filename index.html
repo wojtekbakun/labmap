@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>LabMap</title>
+<link rel="icon" id="favicon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  color-scheme: light;
+  --plane: #eceef2; --surface: #ffffff; --surface-2: #f5f6f8; --line: #e1e4ea; --line-2: #cdd2da; --logo-outline: transparent;
+  --ink: #0f1218; --ink-2: #4a5160; --ink-3: #7c8492;
+  --accent: #2a78d6; --accent-bg: #d9e7f8; --s1: #2a78d6; --s2: #eb6834;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b;
+  --warn-ink: #8a5a00; --crit-ink: #b02a2a; --warn-bg: #fff5dc; --crit-bg: #fdeaea;
+  --dots: rgba(15, 18, 24, .10); --scrim: rgba(15, 18, 24, .28);
+  --shadow: 0 1px 2px rgba(15, 18, 24, .04), 0 8px 28px -14px rgba(15, 18, 24, .14);
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "JetBrains Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane: #08090c; --surface: #0f1217; --surface-2: #151920; --line: #1e232c; --line-2: #2b313c; --logo-outline: #3a4250;
+    --ink: #e8ebf0; --ink-2: #a3abb8; --ink-3: #6b7482;
+    --accent: #3987e5; --accent-bg: #16263b; --s1: #3987e5; --s2: #d95926;
+    --warn-ink: #fab219; --crit-ink: #f07272; --warn-bg: rgba(250, 178, 25, .09); --crit-bg: rgba(208, 59, 59, .12);
+    --dots: rgba(255, 255, 255, .055); --scrim: rgba(0, 0, 0, .5);
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane: #08090c; --surface: #0f1217; --surface-2: #151920; --line: #1e232c; --line-2: #2b313c; --logo-outline: #3a4250;
+  --ink: #e8ebf0; --ink-2: #a3abb8; --ink-3: #6b7482;
+  --accent: #3987e5; --accent-bg: #16263b; --s1: #3987e5; --s2: #d95926;
+  --warn-ink: #fab219; --crit-ink: #f07272; --warn-bg: rgba(250, 178, 25, .09); --crit-bg: rgba(208, 59, 59, .12);
+  --dots: rgba(255, 255, 255, .055); --scrim: rgba(0, 0, 0, .5);
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--plane); color: var(--ink); font: 14px/1.45 var(--sans); }
+body.offline main { opacity: .5; }
+a { color: inherit; }
+.mono { font-family: var(--mono); font-size: .93em; }
+.page { max-width: 1480px; margin: 0 auto; padding: 0 24px 32px; }
+svg.ic { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 12px 16px; padding: 14px 0; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: auto; }
+.logo { width: 30px; height: 30px; flex: none; }
+.logo svg { width: 30px; height: 30px; display: block; }
+.logo .tile { fill: #0f1218; stroke: var(--logo-outline); }
+.logo .led { fill: var(--good); transition: fill .3s; }
+.logo.st-warning .led { fill: var(--warn); } .logo.st-error .led { fill: var(--crit); } .logo.st-offline .led { fill: var(--ink-3); }
+h1 { font-size: 18px; line-height: 1; margin: 0; letter-spacing: -.01em; font-weight: 700; }
+.top-right { display: flex; align-items: center; gap: 12px; }
+.button { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--surface);
+  color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.button:hover { border-color: var(--accent); }
+.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.button svg { width: 15px; height: 15px; flex: none; }
+.button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+.live { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-3); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live .dot { color: var(--good); animation: pulse 2s ease-in-out infinite; }
+body.offline .live { color: var(--crit-ink); }
+body.offline .live .dot { color: var(--crit); animation: none; }
+@keyframes pulse { 50% { opacity: .25; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; display: inline-block; }
+
+/* the map */
+.stage {
+  position: relative; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px 8px;
+  background-color: var(--surface); background-image: radial-gradient(var(--dots) 1.1px, transparent 1.3px);
+  background-size: 22px 22px; background-position: 11px 11px; box-shadow: var(--shadow);
+}
+.stage { display: flex; flex-direction: column; min-height: calc(100vh - 100px); }
+#map { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.stage-bar { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 2px 4px 4px; }
+.stage-bar h2 { margin: 0; font-size: 13px; font-weight: 650; color: var(--ink-2); }
+#hint { position: fixed; z-index: 25; pointer-events: none; display: none; align-items: center; gap: 6px; padding: 3px 9px 3px 8px; border-radius: 6px;
+  background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 14px -6px rgba(0, 0, 0, .4); }
+#hint .dot { width: 7px; height: 7px; color: var(--ink-3); }
+#hint.st-ok .dot { color: var(--good); } #hint.st-warning .dot { color: var(--warn); } #hint.st-error .dot { color: var(--crit); }
+#hint.no-dot .dot { display: none; }
+#map svg { display: block; width: 100%; height: auto; max-height: calc(100vh - 140px); font-family: var(--sans); }
+#map svg.narrow { max-height: none; min-height: 0; max-width: 640px; margin: 0 auto; }
+.node-bg { fill: var(--surface); stroke: var(--line-2); stroke-width: 1; }
+.k-pill > .node-bg { fill: var(--surface-2); }
+.k-server > .node-bg { stroke: var(--accent); stroke-width: 1.5; }
+.halo { fill: none; stroke: var(--accent); stroke-width: 7; opacity: .13; }
+.st-warning > .node-bg { stroke: var(--warn); stroke-width: 1.5; }
+.st-error > .node-bg { stroke: var(--crit); stroke-width: 1.6; }
+.st-none.k-pill { opacity: .6; }
+.part-bg { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; }
+.part.st-warning > .part-bg { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.5; }
+.part.st-error > .part-bg { fill: var(--crit-bg); stroke: var(--crit); stroke-width: 1.6; }
+.m-title { fill: var(--ink); font-weight: 650; }
+.m-text { fill: var(--ink-2); }
+.m-faint { fill: var(--ink-3); }
+.m-mono { font-family: var(--mono); }
+.m-label { fill: var(--ink-3); font-weight: 700; letter-spacing: .08em; }
+.m-value { fill: var(--ink); font-weight: 650; }
+.m-icon { color: var(--ink-2); }
+.m-icon svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.m-warning { fill: var(--warn-ink); font-weight: 600; }
+.m-error { fill: var(--crit-ink); font-weight: 600; }
+.m-dot { fill: var(--ink-3); }
+.dot-target { fill: transparent; }
+.st-ok > .m-dot, .m-dot.st-ok { fill: var(--good); }
+.st-warning > .m-dot, .m-dot.st-warning { fill: var(--warn); }
+.st-error > .m-dot, .m-dot.st-error { fill: var(--crit); }
+.m-track { fill: var(--accent-bg); }
+.m-bar { fill: var(--accent); }
+.m-bar.warning { fill: var(--warn); } .m-bar.error { fill: var(--crit); }
+.zone { fill: var(--ink-3); font-size: 11px; font-weight: 700; letter-spacing: .14em; }
+.clickable { cursor: pointer; }
+.clickable:hover > g > .node-bg, .clickable:focus-visible > g > .node-bg { stroke: var(--accent); stroke-width: 1.8; }
+.clickable:hover > g > .part-bg, .clickable:focus-visible > g > .part-bg { stroke: var(--accent); stroke-width: 1.6; }
+.clickable:focus { outline: none; }
+.row-bg { fill: transparent; }
+.clickable:hover > .row-bg, .clickable:focus-visible > .row-bg { fill: var(--surface-2); }
+.open-bg { fill: transparent; }
+.open-link .m-icon { color: var(--ink-3); }
+.open-link:hover .open-bg, .open-link:focus-visible .open-bg { fill: var(--accent-bg); }
+.open-link:hover .m-icon, .open-link:focus-visible .m-icon { color: var(--accent); }
+.open-link:focus { outline: none; }
+.wire { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
+.wire.thin { stroke-dasharray: 2 4; stroke-width: 1.2; }
+.wire.st-none { stroke-dasharray: 3 5; opacity: .7; }
+.wire.st-error { stroke: var(--crit); stroke-dasharray: 5 4; }
+.flow { fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 1.5 10; animation: flow .9s linear infinite; }
+.flow.reverse { animation-direction: reverse; }
+@keyframes flow { to { stroke-dashoffset: -11.5; } }
+@media (prefers-reduced-motion: reduce) { .flow, .live .dot { animation: none; } }
+
+/* charts (in the details) */
+.spark { position: relative; height: 64px; padding-top: 4px; outline: none; touch-action: pan-y; }
+.spark svg { position: absolute; inset: 4px 0 0; width: 100%; height: calc(100% - 4px); overflow: visible; }
+.spark .line { fill: none; stroke: var(--s1); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.spark .line.s2 { stroke: var(--s2); }
+.spark .area { fill: var(--s1); opacity: .1; }
+.spark .cursor { position: absolute; top: 4px; bottom: 0; width: 1px; background: var(--ink-3); display: none; pointer-events: none; }
+.spark .point { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--surface); box-sizing: content-box; transform: translate(-50%, -50%); display: none; pointer-events: none; background: var(--s1); }
+.spark .point.s2 { background: var(--s2); }
+.spark.active .cursor, .spark.active .point { display: block; }
+.spark:focus-visible { box-shadow: 0 0 0 2px var(--accent); border-radius: 4px; }
+#tooltip { position: fixed; z-index: 40; pointer-events: none; display: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); border-radius: 8px; padding: 7px 10px; font-size: 12px; line-height: 1.5; box-shadow: 0 8px 24px -8px rgba(0, 0, 0, .3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+#tooltip b { font-weight: 650; margin-right: 6px; }
+#tooltip .key { display: inline-block; width: 12px; height: 2px; border-radius: 1px; vertical-align: 3px; margin-right: 7px; background: var(--s1); }
+#tooltip .key.s2 { background: var(--s2); }
+#tooltip .when { color: var(--ink-3); }
+.legend-key { display: inline-flex; align-items: center; gap: 6px; }
+.legend-key::before { content: ""; width: 12px; height: 2px; border-radius: 1px; background: var(--s1); }
+.legend-key.s2::before { background: var(--s2); }
+
+/* details of a map element */
+#scrim { position: fixed; inset: 0; z-index: 30; background: var(--scrim); }
+#details { position: fixed; z-index: 31; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); display: flex; flex-direction: column;
+  background: var(--surface); border-left: 1px solid var(--line-2); box-shadow: -16px 0 48px -24px rgba(0, 0, 0, .45); }
+#scrim[hidden], #details[hidden] { display: none; }
+.d-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 14px 18px; border-bottom: 1px solid var(--line); }
+.d-icon { --k: var(--ink-2); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: none;
+  color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+.d-icon svg { width: 18px; height: 18px; }
+.d-top h2 { margin: 0; font-size: 16px; font-weight: 650; flex: 1; min-width: 0; }
+.close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink-2); cursor: pointer; display: grid; place-items: center; flex: none; }
+.close:hover { border-color: var(--accent); color: var(--ink); }
+.close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.close svg { width: 16px; height: 16px; }
+#d-body { overflow-y: auto; padding: 2px 18px 24px; }
+.d-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.d-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.d-state.st-ok .dot { color: var(--good); } .d-state.st-warning .dot { color: var(--warn); } .d-state.st-error .dot { color: var(--crit); } .d-state.st-none .dot { color: var(--ink-3); }
+.d-open { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.d-open:hover { filter: brightness(1.1); }
+.d-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.d-open svg { width: 14px; height: 14px; }
+.d-desc { color: var(--ink-2); font-size: 13px; margin: 12px 0 0; }
+.d-alert { margin-top: 12px; padding: 9px 12px; border-radius: 8px; border-left: 3px solid var(--warn); background: var(--warn-bg); font-size: 13px; }
+.d-alert.error { border-left-color: var(--crit); background: var(--crit-bg); }
+.d-alert.info { border-left-color: var(--accent); background: var(--accent-bg); }
+.d-chart { margin-top: 14px; padding: 11px 12px 8px; border: 1px solid var(--line); border-radius: 10px; }
+.d-chart-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 2px; }
+.d-chart-top b { color: var(--ink); font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.d-chart-bottom { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+.d-section h3 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 20px 0 2px; }
+.d-section dl { margin: 0; }
+.d-pair { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.d-pair:last-child { border-bottom: 0; }
+.d-pair dt { color: var(--ink-2); flex: none; display: inline-flex; align-items: center; gap: 7px; }
+.d-pair dt .dot { width: 7px; height: 7px; }
+.d-pair dt .dot.st-ok { color: var(--good); } .d-pair dt .dot.st-warning { color: var(--warn); } .d-pair dt .dot.st-error { color: var(--crit); }
+.d-pair dd { margin: 0; text-align: right; font-weight: 550; min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.d-pair a { color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 12.5px; }
+.d-pair a:hover { text-decoration: underline; }
+.d-login { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.d-login:last-child { border-bottom: 0; }
+.d-login-name { color: var(--ink-2); margin-bottom: 5px; }
+.d-login-data { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.d-login-notes { color: var(--ink-3); font-size: 12px; margin-top: 5px; }
+.password { font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); padding: 1px 7px; border-radius: 5px; user-select: all; -webkit-user-select: all; }
+.hidden-value { color: var(--ink-3); font-weight: 500; font-style: italic; }
+.d-test { margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 10px; }
+.d-test-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.d-test-numbers > div > span { display: block; font-size: 12px; color: var(--ink-2); }
+.d-test-numbers b { display: block; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.25; }
+.d-test-numbers b small { font-size: 13px; font-weight: 550; color: var(--ink-2); margin-left: 3px; }
+.d-test-numbers .waiting b { color: var(--ink-3); }
+.d-test-numbers .current b { color: var(--accent); }
+.d-test-max { font-size: 11.5px; color: var(--ink-3); }
+.d-test-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+.d-test-error { font-size: 12.5px; color: var(--crit-ink); margin-top: 8px; }
+.d-button { padding: 5px 11px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.d-button:hover:not(:disabled) { border-color: var(--accent); }
+.d-button:disabled { color: var(--ink-3); cursor: default; }
+.d-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.d-faint { color: var(--ink-3); font-size: 12.5px; padding: 8px 0; }
+@media (max-width: 600px) {
+  .page { padding: 0 16px 24px; }
+  .top { padding: 12px 0 10px; gap: 8px; }
+  #privacy span, .live span:last-child { display: none; }
+  #privacy { padding: 5px 8px; }
+  body.offline .live span:last-child { display: inline; }
+  .stage { padding: 8px 6px 6px; border-radius: 12px; min-height: 0; }
+  .stage-bar { padding: 2px 6px 4px; }
+  #details { top: auto; left: 0; width: 100%; max-height: 86vh; border-left: 0; border-top: 1px solid var(--line-2); border-radius: 16px 16px 0 0; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" id="logo" aria-hidden="true"><svg viewBox="0 0 64 64"><rect class="tile" x=".75" y=".75" width="62.5" height="62.5" rx="14.5" stroke-width="1.5"/><rect x="16.25" y="11" width="9" height="42" rx="4.5" fill="#fff"/><circle class="led" cx="39.25" cy="44.5" r="12" opacity=".22"/><circle class="led" cx="39.25" cy="44.5" r="8.5"/></svg></div>
+      <h1 id="hostname">LabMap</h1>
+    </div>
+    <div class="top-right">
+      <button class="button" id="privacy" type="button" aria-pressed="false" title="Hides IP addresses, device names, versions and passwords – for when you show the page to someone"></button>
+      <span class="live" title="Refreshes every 3 s"><i class="dot"></i><span id="clock">—</span></span>
+    </div>
+  </header>
+  <main>
+    <section class="stage" aria-labelledby="map-title">
+      <div class="stage-bar">
+        <h2 id="map-title">Homelab map</h2>
+      </div>
+      <div id="map"></div>
+    </section>
+  </main>
+</div>
+<div id="scrim" hidden></div>
+<aside id="details" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
+  <div class="d-top">
+    <span class="d-icon" id="d-icon"></span>
+    <h2 id="d-title"></h2>
+    <button class="close" id="d-close" type="button" aria-label="Close details"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div id="d-body"></div>
+</aside>
+<div id="tooltip" role="tooltip"></div>
+<div id="hint" role="tooltip"><i class="dot"></i><span></span></div>
+<script>
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const REFRESH = 3000;
+const HISTORY = 150, HISTORY_STEP = 2;  // 150 samples every 2 s = 5 min
+let latest = null;
+
+// --- helpers -------------------------------------------------------------------------------
+function build(e, attrs, children) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    e.setAttribute(k, v);
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c === null || c === undefined || c === false || c === '') continue;
+    e.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return e;
+}
+const el = (tag, attrs, ...children) => build(document.createElement(tag), attrs, children);
+const sv = (tag, attrs, ...children) => build(document.createElementNS(NS, tag), attrs, children);
+let pressed = 0;  // when a button or finger went down – don't rebuild then, so the click isn't lost
+let pointerOver = null;  // the chart under the cursor – don't rebuild it, so the reading doesn't jump
+window.addEventListener('pointerdown', e => { if (e.button === 0) pressed = Date.now(); }, true);
+for (const t of ['pointerup', 'pointercancel', 'contextmenu', 'dragstart'])
+  window.addEventListener(t, () => { pressed = 0; }, true);
+window.addEventListener('blur', () => { pressed = 0; });  // no capture: only when the whole window loses focus
+function busy(e) {  // selected text, keyboard focus, cursor on a chart or a click in progress in this section
+  const sel = getSelection();
+  let focus = false;
+  try { focus = !!e.querySelector(':focus-visible'); } catch (_) {}
+  return (pressed > 0 && Date.now() - pressed < 2000) || focus || (!!pointerOver && e.contains(pointerOver))
+    || (!!sel && !sel.isCollapsed && e.contains(sel.anchorNode));
+}
+function replace(id, ...children) {
+  const e = document.getElementById(id);
+  if (busy(e)) return;
+  const fresh = build(document.createElement('div'), {}, children);
+  if (fresh.innerHTML !== e.innerHTML) e.replaceChildren(...fresh.childNodes);
+}
+
+// privacy mode: hides addresses, device names, versions and passwords (e.g. when you show the page to someone)
+let privateMode = false;
+try { privateMode = localStorage.getItem('labmap-private') === '1'; } catch (_) {}
+const secret = x => privateMode ? el('span', {class: 'hidden-value'}, 'hidden') : (x ?? '—');
+
+const fmt = (n, d = 0) => n == null || isNaN(n) ? '—'
+  : new Intl.NumberFormat(undefined, {minimumFractionDigits: d, maximumFractionDigits: d}).format(n);
+function bytes(b) {
+  if (b == null || isNaN(b)) return '—';
+  const u = ['B', 'kB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  while (b >= 1000 && i < u.length - 1) { b /= 1000; i++; }
+  return fmt(b, i === 0 || b >= 100 ? 0 : 1) + ' ' + u[i];
+}
+const rate = b => b == null || isNaN(b) ? '—' : bytes(b) + '/s';
+function trafficShort(rx, tx) {  // "↓11 ↑35 kB/s" - one unit, so it fits a small box
+  const u = ['B/s', 'kB/s', 'MB/s', 'GB/s'];
+  let i = 0, div = 1;
+  while (Math.max(rx || 0, tx || 0) / div >= 1000 && i < u.length - 1) { div *= 1000; i++; }
+  const f = v => { v = (v || 0) / div; return fmt(v, v < 10 && i ? 1 : 0); };
+  return `↓${f(rx)} ↑${f(tx)} ${u[i]}`;
+}
+const count = (n, one, many) => fmt(n) + ' ' + (Math.abs(Math.round(n)) === 1 ? one : many);
+function duration(sec) {
+  if (sec == null || isNaN(sec)) return '—';
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+  if (d) return `${d} d ${h} h`;
+  if (h) return m ? `${h} h ${m} min` : `${h} h`;
+  return `${Math.max(m, 1)} min`;
+}
+function ago(sec) {
+  sec = Math.round(sec);
+  if (sec <= 1) return 'just now';
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return (m ? `${m} min ` : '') + (s ? `${s} s ` : '') + 'ago';
+}
+function when(ts) {
+  const d = new Date(ts * 1000), now = new Date();
+  const time = d.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
+  const midnight = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((midnight(now) - midnight(d)) / 86400000);
+  if (days === 0) return 'today ' + time;
+  if (days === 1) return 'yesterday ' + time;
+  return d.toLocaleDateString(undefined, {day: 'numeric', month: 'short'}) + ' ' + time;
+}
+const percent = (a, b) => b ? 100 * a / b : null;
+const signal = d => `${d >= -60 ? 'good' : d >= -70 ? 'fair' : 'weak'} · ${fmt(d)} dBm`;
+const onIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const speed = mb => !(mb > 0) ? '—' : mb >= 1000 ? fmt(mb / 1000, mb % 1000 ? 1 : 0) + ' Gb/s' : fmt(mb) + ' Mb/s';
+const level = (p, warning = 85, error = 95) => p == null ? '' : p >= error ? 'error' : p >= warning ? 'warning' : '';
+const st = x => x || 'none';
+const worst = (...states) => ['error', 'warning', 'ok', 'none'].find(x => states.includes(x)) || 'none';
+function clip(t, px, f, mono) {
+  t = String(t ?? '');
+  const max = Math.max(4, Math.floor(px / (f * (mono ? 0.62 : 0.56))));
+  return t.length > max ? t.slice(0, max - 1) + '…' : t;
+}
+const host = () => location.hostname.includes(':') && !location.hostname.startsWith('[') ? `[${location.hostname}]` : location.hostname;
+function address(s) {
+  if (s.address) {
+    const a = String(s.address).replaceAll('{host}', host());
+    return /^(https?|smb|afp|ftp|sftp|ssh|vnc|rdp):/i.test(a) ? a : null;  // javascript: and the like won't pass
+  }
+  if (s.port) return `${s.https ? 'https' : 'http'}://${host()}:${s.port}${s.path || '/'}`;
+  return null;
+}
+const serviceLink = s => { const a = address(s); return onIOS && /^smb:/i.test(a || '') ? null : a; };  // iOS can't open smb://
+const addressShort = s => (address(s) || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+const color = c => /^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : '#64748b';
+const r1 = x => Math.round(x * 10) / 10;
+
+const STATE = {ok: 'running', warning: 'needs attention', error: 'down', none: 'no data'};
+const HINT = {ok: 'OK', warning: 'warning', error: 'down', none: 'inactive'};  // one word over a map element's status dot
+const CONTAINER_STATE = {running: 'running', exited: 'stopped', restarting: 'restarting', paused: 'paused',
+  created: 'created', dead: 'dead', removing: 'being removed', missing: 'no such container'};
+const QUEUES = {thumbnailGeneration: 'thumbnails', metadataExtraction: 'metadata', videoConversion: 'video conversion',
+  faceDetection: 'face detection', facialRecognition: 'face recognition', smartSearch: 'smart search',
+  duplicateDetection: 'duplicates', library: 'library scan', sidecar: 'XMP sidecars', ocr: 'text in photos',
+  backgroundTask: 'background tasks', search: 'search index', migration: 'migration', storageTemplateMigration: 'file organizing',
+  notifications: 'notifications', backupDatabase: 'database backup', editor: 'editing', workflow: 'automations'};
+const ICONS = {
+  photos: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/>',
+  cloud: '<path d="M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10a4 4 0 0 1-.5 8.5Z"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/>',
+  music: '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  home: '<path d="m3 11 9-7 9 7v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2Z"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/>',
+  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  app: '<rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/>',
+  wifi: '<path d="M2 8.8a15 15 0 0 1 20 0"/><path d="M5.2 12.4a10.5 10.5 0 0 1 13.6 0"/><path d="M8.6 15.9a5.5 5.5 0 0 1 6.8 0"/><path d="M12 19.5h.01"/>',
+  mesh: '<circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/>',
+  ethernet: '<rect x="5" y="3" width="14" height="11" rx="1.5"/><path d="M9 14v3h6v-3M12 17v4M9 7v3M12 7v3M15 7v3"/>',
+  charger: '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0Z"/><path d="M12 17v5"/>',
+  battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 10.5v3M9.5 10.5v3"/>',
+  laptop: '<rect x="4" y="4.5" width="16" height="11" rx="1.5"/><path d="M2 19.5h20"/>',
+  disk: '<path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/><path d="M6 16h.01M10 16h.01"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  phone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  open: '<path d="M7 17 17 7M9 7h8v8"/>',
+  eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeClosed: '<path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+};
+function icon(name, attrs = {}) {
+  const s = sv('svg', {viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'ic', ...attrs});
+  s.innerHTML = ICONS[name] || ICONS.app;  // only constants from ICONS, never data from the server
+  return s;
+}
+
+// --- alerts: each belongs to one element of the map ("where" from labmap.py) ----------------
+function alertWhere(s, a) {
+  const w = a.where || 'server';
+  if (w.startsWith('service:') && !(s.services || []).some(x => 'service:' + x.name === w)) return 'server';
+  return w;
+}
+const alertsFor = (s, where) => (s.alerts || []).filter(a => alertWhere(s, a) === where);
+function withAlerts(state, s, where) {  // an element's state raised by its alerts (yellow/red)
+  const a = alertsFor(s, where);
+  const x = a.some(z => z.level === 'error') ? 'error' : a.some(z => z.level === 'warning') ? 'warning' : null;
+  return x ? worst(state, x) : state;
+}
+const showAlerts = (s, where) => alertsFor(s, where).map(a => el('div', {class: 'd-alert ' + a.level}, a.text));
+
+// --- power and disks ---------------------------------------------------------------------------
+const notCharging = b => !!b && b.status === 'Not charging' && !!(b.thresholds && b.thresholds[0]) && b.percent < b.thresholds[0] - 5;  // same threshold as the alert in labmap.py
+function batteryStatus(b) {
+  if (!b || !b.status) return '—';
+  if (b.status === 'Not charging') return notCharging(b) ? 'not charging!' : b.thresholds && b.thresholds[1] ? `limit ${fmt(b.thresholds[1])}%` : 'not charging';
+  return {Charging: 'charging', Discharging: 'discharging', Full: 'full', Unknown: 'unknown'}[b.status] || b.status;
+}
+function powerState(s) {  // charger and battery – a part of the laptop
+  const z = s.power || {}, b = z.battery || {}, usb = z.usb_c || {};
+  const cantKeepUp = !!z.charger && b.status === 'Discharging', weak = !!z.charger && usb.power != null && usb.power < 40;
+  const stCharger = !z.charger ? (z.charger === false ? 'warning' : 'none') : cantKeepUp ? 'error' : weak ? 'warning' : 'ok';
+  const stBattery = !z.battery ? 'none' : b.status === 'Discharging' ? (b.percent < 50 ? 'error' : 'warning') : notCharging(b) ? 'warning' : 'ok';
+  return {
+    state: worst(stCharger, stBattery), cantKeepUp, weak,
+    charger: [z.charger ? (usb.power ? `${fmt(usb.power)} W` : 'yes') : 'none',
+      ...(cantKeepUp ? ["can't keep up", 'error'] : weak ? ['too weak', 'warning'] : z.charger ? ['plugged in', 'faint'] : ['unplugged', 'warning'])],
+    battery: !z.battery ? ['—', 'no battery', 'faint'] : [`${fmt(b.percent)}%`,
+      b.hours_left ? `about ${fmt(b.hours_left, 1)} h` : batteryStatus(b), stBattery === 'ok' ? 'faint' : stBattery],
+    bar: b.percent != null ? {value: b.percent / 100, cls: b.percent < 20 ? 'error' : b.percent < 35 ? 'warning' : ''} : null,
+  };
+}
+function diskState(state, r) {
+  const t = String(state || '').split(',');
+  if (t.includes('faulty')) return ['failed', 'error'];
+  if (t.includes('spare')) return [r.action === 'recover' ? `rebuilding${r.progress != null ? ' ' + fmt(r.progress) + '%' : ''}` : 'spare', 'warning'];
+  if (t.includes('in_sync')) return ['healthy', 'ok'];
+  return [state || 'no data', 'error'];
+}
+function disksSummary(r) {
+  const disks = r.disks || [], n = r.disks_in_array || disks.length;
+  const bad = disks.filter(d => diskState(d.state, r)[1] !== 'ok');
+  if (disks.length < n) return [n - disks.length === 1 ? 'one disk is missing' : 'disks are missing', 'error'];
+  if (bad.length) return [bad.map(d => `${d.name} ${diskState(d.state, r)[0]}`).join(' · '), diskState(bad[0].state, r)[1]];
+  return [n === 2 ? 'both disks healthy' : `${n} ${n === 1 ? 'disk' : 'disks'} healthy`, 'ok'];
+}
+const raidTitle = r => 'Data · ' + (r.level ? r.level.toUpperCase() : 'RAID');
+const serverTitle = s => (s.power || {}).battery ? 'Laptop' : 'Server';
+
+// --- header and privacy switch --------------------------------------------------------------
+function setPrivacy(v) {
+  privateMode = v;
+  try { localStorage.setItem('labmap-private', v ? '1' : '0'); } catch (_) {}
+  if (v) logins = null;  // passwords don't stay in the page's memory
+  const b = document.getElementById('privacy');
+  b.setAttribute('aria-pressed', String(v));
+  b.setAttribute('aria-label', v ? 'Data hidden – show' : 'Hide sensitive data');
+  b.replaceChildren(icon(v ? 'eyeClosed' : 'eye'), el('span', {}, v ? 'Data hidden' : 'Hide data'));
+  if (latest && latest.ready) { render(latest); if (opened) renderDetails(latest, true); }
+}
+document.getElementById('privacy').addEventListener('click', () => setPrivacy(!privateMode));
+
+// --- the homelab map --------------------------------------------------------------------------
+function serviceLine(x) {
+  const d = x.data || {};
+  if (x.type === 'immich' && d.stats) return `${fmt(d.stats.photos)} photos · ${fmt(d.stats.videos)} videos`;
+  if (x.type === 'immich' && d.queues && Object.keys(d.queues).length) return 'processing photos';
+  if (x.type === 'samba') { const share = String(x.address || '').split('/').filter(Boolean).pop(); return share && !share.includes(':') ? `share “${share}”` : ''; }
+  return '';
+}
+function mapData(s, narrow) {
+  const t = s.now || {}, n = s.network || {}, r = s.raid || {};
+  const wifi = n.wifi || {}, lan = n.lan || {}, ts = n.tailscale || {}, p = s.memory || {}, d = s.system_disk || {};
+  const client = (lan.clients || [])[0];
+  const traffic = narrow ? trafficShort : (rx, tx) => `↓ ${rate(rx)}   ↑ ${rate(tx)}`;
+  const link = (rx, tx) => ({active: (rx || 0) + (tx || 0) > 30e3, reverse: (tx || 0) > (rx || 0)});
+  const m = r.space, pRaid = m ? (m.percent ?? percent(m.used, m.total)) : null;
+  const pRam = p.total ? percent(p.total - p.available, p.total) : null, pSys = d.percent ?? percent(d.used, d.total);
+  const tl = (t, cls = '') => ({t, cls});
+  const pw = powerState(s), [disks, disksSt] = disksSummary(r);
+  return {
+    wifi: {key: 'wifi', kind: 'network', icon: 'wifi', title: 'Wi-Fi', state: withAlerts(wifi.connected ? 'ok' : 'error', s, 'wifi'),
+      lines: [wifi.connected ? tl(traffic(t.wifi_rx, t.wifi_tx), 'mono faint') : tl('disconnected', 'error')]},
+    tailscale: {key: 'tailscale', kind: 'network', icon: 'mesh', title: 'Tailscale', state: withAlerts(ts.running ? 'ok' : 'warning', s, 'tailscale'),
+      lines: [ts.running ? tl(traffic(t.ts_rx, t.ts_tx), 'mono faint') : tl('off', 'warning')]},
+    lan: {key: 'lan', kind: 'network', icon: 'ethernet', title: narrow ? 'LAN' : 'LAN cable', state: withAlerts(lan.connected ? 'ok' : 'none', s, 'lan'),
+      lines: [lan.connected ? tl(traffic(t.lan_rx, t.lan_tx), 'mono faint') : tl('unplugged', 'faint')]},
+    pills: [
+      {key: 'wifi', icon: 'globe', title: 'Internet', state: wifi.connected ? 'ok' : 'none'},
+      {key: 'tailscale', icon: 'phone', title: ts.running ? `Tailnet · ${ts.online} of ${ts.devices} online` : 'Tailnet', state: ts.running ? 'ok' : 'none'},
+      {key: 'lan', icon: 'monitor', title: lan.connected && client && !privateMode ? (client.name || client.ip) : 'Wired device', state: lan.connected ? 'ok' : 'none'}],
+    server: {key: 'server', kind: 'server', icon: 'laptop', title: serverTitle(s), state: withAlerts('ok', s, 'server'),
+      metrics: [
+        {e: 'CPU', w: `${fmt(t.cpu)}%`, v: (t.cpu || 0) / 100, cls: level(t.cpu, 80, 95)},
+        {e: 'RAM', w: `${fmt(pRam)}%`, v: (pRam || 0) / 100, cls: level(pRam, 85, 95)},
+        {e: 'DISK', w: `${fmt(pSys)}%`, v: (pSys || 0) / 100, cls: level(pSys)},
+        {e: 'TEMP', w: `${fmt(t.temp)} °C`, v: Math.max(0, ((t.temp || 30) - 30) / 60), cls: level(t.temp, 80, 90)}],
+      power: (s.power || {}).battery || (s.power || {}).usb_c ? {...pw, state: withAlerts(pw.state, s, 'power')} : null},
+    raid: {key: 'raid', kind: 'raid', icon: 'disk', title: raidTitle(r),
+      state: withAlerts(!r.exists || !r.mounted || r.degraded ? 'error' : (m && level(pRaid)) || 'ok', s, 'raid'),
+      lines: [m ? tl(`${bytes(m.used)} of ${bytes(m.total)}`) : tl(r.exists ? 'not mounted' : 'no array', 'error')],
+      bar: m ? {value: (pRaid || 0) / 100, cls: level(pRaid)} : null,
+      footer: tl(disks, disksSt === 'ok' ? 'faint' : disksSt)},
+    services: (s.services || []).map(x => ({key: 'service:' + x.name, kind: 'service', icon: x.icon, color: color(x.color), title: x.name,
+      state: withAlerts(st(x.state), s, 'service:' + x.name), lines: [tl(serviceLine(x), 'faint')], href: serviceLink(x)})),
+    links: {
+      networks: [link(t.wifi_rx, t.wifi_tx), link(t.ts_rx, t.ts_tx), {...link(t.lan_rx, t.lan_tx), state: lan.connected ? null : 'none'}],
+      raid: {active: (t.raid_read || 0) + (t.raid_write || 0) > 200e3, reverse: (t.raid_read || 0) > (t.raid_write || 0), state: r.mounted ? null : 'error'},
+    },
+  };
+}
+function wideLayout(s) {
+  const D = mapData(s, false), W = 1120, n = D.services.length;
+  const hS = n > 6 ? 54 : 66, gap = n > 6 ? 8 : 12, block = n * hS + Math.max(n - 1, 0) * gap;
+  const server = {...D.server, x: 385, y: 226, w: 320, h: D.server.power ? 200 : 112};
+  const middle = server.y + server.h / 2, startS = Math.max(206, middle - block / 2);  // below the network row
+  const raid = {...D.raid, x: 40, y: middle - 60, w: 290, h: 120};  // on the left, level with the server
+  const H = Math.max(470, startS + block + 24, raid.y + raid.h + 24);
+  const centers = [300, 545, 790];
+  const networks = [D.wifi, D.tailscale, D.lan].map((w, i) => ({...w, x: centers[i] - 114, y: 92, w: 228, h: 70}));
+  const pills = D.pills.map((w, i) => ({...w, kind: 'pill', x: centers[i] - 105, y: 20, w: 210, h: 30}));
+  const services = D.services.map((w, i) => ({...w, x: 790, y: startS + i * (hS + gap), w: 290, h: hS}));
+  const P = pills.map(w => ({thin: true, state: w.state === 'none' ? 'none' : null, a: [w.x + w.w / 2, w.y + w.h], b: [w.x + w.w / 2, 92], mode: 'v'}));
+  networks.forEach((w, i) => P.push({...D.links.networks[i], a: [w.x + w.w / 2, w.y + w.h], b: [server.x + 80 + i * 80, server.y], ym: 194, mode: 'v'}));
+  P.push({...D.links.raid, a: [server.x, middle], b: [raid.x + raid.w, middle], mode: 'h'});
+  services.forEach((w, i) => P.push({state: w.state === 'error' ? 'error' : null, mode: 'h', xm: 760, b: [w.x, w.y + w.h / 2],
+    a: [server.x + server.w, n === 1 ? middle : server.y + 30 + i * (server.h - 60) / (n - 1)]}));
+  const zones = [['NETWORK', networks[0].x, 80], ['DATA', raid.x, raid.y - 12], ['APPS', 1080, startS - 12, 'end']];
+  return {w: W, h: H, small: false, nodes: [...pills, ...networks, server, raid, ...services], wires: P, zones};
+}
+function narrowLayout(s, width) {
+  const W = Math.round(Math.max(320, Math.min(640, width))), c = W < 520;  // c: phone – smaller boxes
+  const D = mapData(s, c), n = D.services.length;
+  const m = c ? 10 : 14, gap = c ? 6 : 8, k = (W - 2 * m - 2 * gap) / 3, right = W - 12;  // right margin for the wire to the apps
+  const hN = c ? 58 : 66;
+  const networks = [D.wifi, D.tailscale, D.lan].map((w, i) => ({...w, x: m + i * (k + gap), y: 22, w: k, h: hN, compact: c}));
+  const server = {...D.server, x: m, y: 22 + hN + 36, w: W - 2 * m - 18, h: D.server.power ? (c ? 172 : 200) : (c ? 92 : 112), compact: c};
+  const raid = {...D.raid, x: m, y: server.y + server.h + 40, w: server.w, h: 100};
+  const apps = {kind: 'list', icon: 'app', title: 'Apps', x: m, y: raid.y + raid.h + 40, w: server.w, h: 44 + n * 46, list: D.services,
+    state: worst(...D.services.map(x => x.state), 'ok')};
+  const P = networks.map((w, i) => ({...D.links.networks[i], a: [w.x + w.w / 2, w.y + w.h], b: [w.x + w.w / 2, server.y], mode: 'v'}));
+  P.push({...D.links.raid, a: [server.x + server.w / 2, server.y + server.h], b: [server.x + server.w / 2, raid.y], mode: 'v'});
+  P.push({mode: 'points', pts: [[server.x + server.w, server.y + 40], [right, server.y + 40], [right, apps.y + 22], [apps.x + apps.w, apps.y + 22]],
+    state: apps.state === 'error' ? 'error' : null});
+  const zones = [['NETWORK', m, 14], ['DATA', m, raid.y - 10]];
+  return {w: W, h: apps.y + apps.h + 6, small: true, nodes: [...networks, server, raid, apps], wires: P, zones};
+}
+function polyline(pts, R = 12) {  // a polyline with rounded corners
+  let d = `M${r1(pts[0][0])} ${r1(pts[0][1])}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i - 1], [x, y] = pts[i], [nx, ny] = pts[i + 1];
+    const l1 = Math.hypot(x - px, y - py), l2 = Math.hypot(nx - x, ny - y), r = Math.min(R, l1 / 2, l2 / 2);
+    if (r < 0.5) { d += ` L${r1(x)} ${r1(y)}`; continue; }
+    d += ` L${r1(x + (px - x) / l1 * r)} ${r1(y + (py - y) / l1 * r)} Q${r1(x)} ${r1(y)} ${r1(x + (nx - x) / l2 * r)} ${r1(y + (ny - y) / l2 * r)}`;
+  }
+  const [lx, ly] = pts[pts.length - 1];
+  return d + ` L${r1(lx)} ${r1(ly)}`;
+}
+function drawWire(svg, p, phase) {
+  let pts = p.pts;
+  if (!pts) {
+    const [x1, y1] = p.a, [x2, y2] = p.b;
+    if (p.mode === 'v') { const ym = p.ym ?? (y1 + y2) / 2; pts = [[x1, y1], [x1, ym], [x2, ym], [x2, y2]]; }
+    else { const xm = p.xm ?? (x1 + x2) / 2; pts = [[x1, y1], [xm, y1], [xm, y2], [x2, y2]]; }
+  }
+  const d = polyline(pts);
+  svg.append(sv('path', {class: 'wire' + (p.thin ? ' thin' : '') + (p.state ? ' st-' + p.state : ''), d}));
+  if (p.active) svg.append(sv('path', {class: 'flow' + (p.reverse ? ' reverse' : ''), d, style: `animation-delay:${phase}`}));
+}
+function toDetails(key, title, state, ...children) {  // a map element that shows details when clicked
+  const e = sv('g', {class: 'clickable', tabindex: '0', role: 'button', 'aria-label': `${title}: ${HINT[st(state)]}`, 'data-key': key, 'data-state': st(state)}, ...children);
+  e.addEventListener('click', () => openDetails(key, false));
+  e.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openDetails(key, true); } });
+  return e;
+}
+function openLink(href, title, x, y, r = 28) {  // a separate ↗ button: opens the app's page right away
+  if (!href) return null;
+  const newTab = /^https?:/.test(href);
+  return sv('a', {href, target: newTab ? '_blank' : null, rel: newTab ? 'noopener' : null, class: 'open-link', 'aria-label': 'Open ' + title, 'data-hint': 'open'},
+    sv('rect', {class: 'open-bg', x, y, width: r, height: r, rx: 7}),
+    svgIcon('open', x + (r - 13) / 2, y + (r - 13) / 2, 13));
+}
+function svgIcon(name, x, y, r, cls = 'm-icon') {
+  return sv('g', {class: cls}, icon(name, {x, y, width: r, height: r}));
+}
+function svgDot(cx, cy, r, cls = '') {  // the status dot + a larger, invisible area that shows the hint
+  return [sv('circle', {class: 'dot-target', cx, cy, r: 11}), sv('circle', {class: ('m-dot ' + cls).trim(), cx, cy, r})];
+}
+function svgMeter(g, x, y, width, height, value, cls) {
+  g.append(sv('rect', {class: 'm-track', x, y, width, height, rx: height / 2}));
+  g.append(sv('rect', {class: 'm-bar ' + (cls || ''), x, y, width: Math.max(height, width * Math.min(1, Math.max(0, value))), height, rx: height / 2}));
+}
+const lineClass = k => k.includes('warning') ? 'm-warning' : k.includes('error') ? 'm-error' : k.includes('faint') ? 'm-faint' : 'm-text';
+function nodeHeader(g, w, pad, ic, fTitle) {
+  const noIcon = !!w.compact && w.kind === 'network', tx = w.x + pad + (noIcon ? 0 : ic + 8);
+  if (!noIcon) g.append(svgIcon(w.icon, w.x + pad, w.y + pad - 1, ic));
+  g.append(...svgDot(w.x + w.w - pad - 2, w.y + pad + ic / 2 - 1, w.compact ? 3.6 : 4.2));
+  g.append(sv('text', {class: 'm-title', x: tx, y: w.y + pad + ic / 2 + fTitle * .36 - 1, 'font-size': fTitle}, clip(w.title, w.w - (tx - w.x) - pad - 14, fTitle)));
+}
+function drawServer(w) {  // the machine: readings + power as a separate, clickable part
+  const c = !!w.compact, pad = c ? 10 : 14, ic = c ? 14 : 16;
+  const g = sv('g', {class: `node k-server st-${st(w.state)}`});
+  g.append(sv('rect', {class: 'halo', x: w.x - 1, y: w.y - 1, width: w.w + 2, height: w.h + 2, rx: 13}));
+  g.append(sv('rect', {class: 'node-bg', x: w.x, y: w.y, width: w.w, height: w.h, rx: 12}));
+  nodeHeader(g, w, pad, ic, c ? 15 : 17);
+  const gap = c ? 10 : 14, width = (w.w - pad * 2 - gap * 3) / 4, y0 = w.y + (c ? 38 : 50);
+  w.metrics.forEach((mt, i) => {
+    const x = w.x + pad + i * (width + gap);
+    g.append(sv('text', {class: 'm-label', x, y: y0 + 9, 'font-size': 10}, mt.e));
+    g.append(sv('text', {class: 'm-value', x, y: y0 + (c ? 28 : 32), 'font-size': c ? 16 : 19}, clip(mt.w, width, c ? 16 : 19)));
+    svgMeter(g, x, y0 + (c ? 37 : 43), width, 5, mt.v, mt.cls);
+  });
+  const z = w.power;
+  if (!z) return toDetails('server', w.title, w.state, g);
+  const px = w.x + (c ? 8 : 10), py = w.y + (c ? 92 : 112), pw = w.w - (c ? 16 : 20), ph = w.y + w.h - (c ? 8 : 10) - py;
+  const part = sv('g', {class: `part st-${st(z.state)}`});
+  part.append(sv('rect', {class: 'part-bg', x: px, y: py, width: pw, height: ph, rx: 9}));
+  part.append(...svgDot(px + pw - 12, py + 13, 3.8));
+  const col = (pw - 24 - 16) / 2;
+  [['CHARGER', 'charger', z.charger], ['BATTERY', 'battery', z.battery]].forEach(([label, ic2, [value, desc, cls]], i) => {
+    const x = px + 12 + i * (col + 16);
+    part.append(svgIcon(ic2, x, py + 9, 12));
+    part.append(sv('text', {class: 'm-label', x: x + 17, y: py + 19, 'font-size': 10}, label));
+    part.append(sv('text', {class: 'm-value', x, y: py + (c ? 39 : 42), 'font-size': c ? 15 : 17}, value));
+    part.append(sv('text', {class: lineClass(cls), x, y: py + (c ? 58 : 62), 'font-size': c ? 11 : 12}, clip(desc, col, c ? 11 : 12)));
+    if (i === 1 && z.bar) { const mx = x + (c ? 44 : 50); svgMeter(part, mx, py + (c ? 33 : 36), x + col - mx, 5, z.bar.value, z.bar.cls); }
+  });
+  return [toDetails('server', w.title, w.state, g), toDetails('power', 'Power', z.state, part)];
+}
+function drawNode(w) {
+  if (w.kind === 'server') return drawServer(w);
+  const c = !!w.compact, pad = c ? (w.kind === 'network' ? 8 : 10) : 14, fT = c ? 12.5 : 14, fL = c ? 11 : 12, ic = c ? 14 : 16;
+  const g = sv('g', {class: `node k-${w.kind} st-${st(w.state)}`});
+  g.append(sv('rect', {class: 'node-bg', x: w.x, y: w.y, width: w.w, height: w.h, rx: w.kind === 'pill' ? w.h / 2 : 12}));
+
+  if (w.kind === 'pill') {
+    g.append(svgIcon(w.icon, w.x + 12, w.y + w.h / 2 - 7, 14));
+    g.append(sv('text', {class: 'm-text', x: w.x + 32, y: w.y + w.h / 2 + 4, 'font-size': 11.5, 'font-weight': 600}, clip(w.title, w.w - 44, 11.5)));
+    return toDetails(w.key, w.title, w.state, g);
+  }
+  if (w.kind === 'service') {
+    const kx = w.x + pad, ky = w.y + w.h / 2 - 17;
+    g.append(sv('rect', {x: kx, y: ky, width: 34, height: 34, rx: 9, fill: w.color, 'fill-opacity': .15}));
+    g.append(sv('g', {style: `color:${w.color}`, class: 'm-icon'}, icon(w.icon, {x: kx + 8, y: ky + 8, width: 18, height: 18})));
+    const tx = kx + 46, width = w.w - (tx - w.x) - pad - 30;
+    const desc = (w.lines[0] || {}).t;
+    g.append(sv('text', {class: 'm-title', x: tx, y: w.y + w.h / 2 + (desc ? -3 : 5), 'font-size': 14.5}, clip(w.title, width, 14.5)));
+    if (desc) g.append(sv('text', {class: 'm-faint', x: tx, y: w.y + w.h / 2 + 15, 'font-size': 12}, clip(desc, width, 12)));
+    g.append(...svgDot(w.x + w.w - pad - 2, w.y + pad + 3, 4));
+    return [toDetails(w.key, w.title, w.state, g), openLink(w.href, w.title, w.x + w.w - 36, w.y + w.h - 34)];
+  }
+  if (w.list) {  // phone: apps as a list – a row shows details, ↗ opens the app
+    nodeHeader(g, w, pad, ic, fT);
+    w.list.forEach((x, i) => {
+      const ry = w.y + 38 + i * 46, desc = (x.lines[0] || {}).t;
+      g.append(toDetails(x.key, x.title, x.state,
+        sv('rect', {class: 'row-bg', x: w.x + 4, y: ry, width: w.w - 8, height: 44, rx: 8}),
+        sv('rect', {x: w.x + pad, y: ry + 7, width: 30, height: 30, rx: 8, fill: x.color, 'fill-opacity': .15}),
+        sv('g', {style: `color:${x.color}`, class: 'm-icon'}, icon(x.icon, {x: w.x + pad + 7, y: ry + 14, width: 16, height: 16})),
+        svgDot(w.x + w.w - pad - 40, ry + 22, 3.8, 'st-' + st(x.state)),
+        sv('text', {class: 'm-title', x: w.x + pad + 42, y: desc ? ry + 19 : ry + 27, 'font-size': 13.5}, clip(x.title, w.w - pad * 2 - 112, 13.5)),
+        desc ? sv('text', {class: 'm-faint', x: w.x + pad + 42, y: ry + 35, 'font-size': 11}, clip(desc, w.w - pad * 2 - 112, 11)) : null));
+      g.append(openLink(x.href, x.title, w.x + w.w - pad - 28, ry + 8));
+    });
+    return g;
+  }
+
+  nodeHeader(g, w, pad, ic, fT);
+  let y = w.y + pad + ic + 4;
+  for (const l of w.lines || []) {
+    if (!l || !l.t) continue;
+    y += fL + 5;
+    const mono = l.cls.includes('mono'), fs = mono ? (c ? 10 : fL) : fL;
+    g.append(sv('text', {class: lineClass(l.cls) + (mono ? ' m-mono' : ''), x: w.x + pad, y, 'font-size': fs}, clip(l.t, w.w - pad * 2, fs, mono)));
+  }
+  if (w.bar) {
+    y += 11;
+    svgMeter(g, w.x + pad, y, w.w - pad * 2, 6, w.bar.value, w.bar.cls);
+    y += 6;
+  }
+  if (w.footer && w.footer.t) {
+    y += fL + 9;
+    g.append(sv('text', {class: lineClass(w.footer.cls), x: w.x + pad, y, 'font-size': fL}, clip(w.footer.t, w.w - pad * 2, fL)));
+  }
+  return toDetails(w.key, w.title, w.state, g);
+}
+function drawMap(s) {
+  const box = document.getElementById('map');
+  if (busy(box)) return;
+  const width = box.clientWidth;
+  const L = width >= 1000 ? wideLayout(s) : narrowLayout(s, width);
+  const svg = sv('svg', {viewBox: `0 0 ${L.w} ${L.h}`, class: L.small ? 'narrow' : null, role: 'group',
+    'aria-label': 'Homelab map: the server, networks, RAID and apps'});
+  const phase = `-${(Date.now() % 900) / 1000}s`;  // the animation doesn't jump on refresh
+  for (const [t, x, y, anchor] of L.zones) svg.append(sv('text', {class: 'zone', x, y, 'text-anchor': anchor || null, 'aria-hidden': 'true'}, t));
+  for (const p of L.wires) drawWire(svg, p, phase);
+  for (const w of L.nodes) svg.append(...[drawNode(w)].flat().filter(Boolean));
+  box.replaceChildren(svg);
+  if (cursor) showHint(document.elementFromPoint(cursor[0], cursor[1]), cursor[0], cursor[1]);  // the element under the cursor is new now
+}
+
+// --- hint on hover: an element's state in one word -------------------------------------------
+const hint = document.getElementById('hint');
+let cursor = null;
+function showHint(target, x, y, whole) {  // whole: keyboard focus – a hint for the whole element, not just its dot
+  const k = whole ? target : target && target.closest && target.closest('#map .dot-target, #map .m-dot, #map [data-hint]');
+  const e = k && k.closest && k.closest('#map [data-hint], #map [data-state]');
+  if (!e) { hint.style.display = 'none'; return; }
+  const state = e.dataset.state;
+  hint.className = state ? 'st-' + state : 'no-dot';
+  hint.lastElementChild.textContent = e.dataset.hint || HINT[state] || '';
+  hint.style.display = 'inline-flex';
+  const r = hint.getBoundingClientRect();
+  hint.style.left = Math.max(6, Math.min(x + 12, innerWidth - r.width - 6)) + 'px';
+  hint.style.top = (y + 18 + r.height > innerHeight ? y - r.height - 10 : y + 18) + 'px';
+}
+const mapBox = document.getElementById('map');
+mapBox.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; cursor = [e.clientX, e.clientY]; showHint(e.target, e.clientX, e.clientY); });
+mapBox.addEventListener('pointerleave', () => { cursor = null; hint.style.display = 'none'; });
+mapBox.addEventListener('pointerdown', () => { hint.style.display = 'none'; });
+mapBox.addEventListener('focusin', e => { const r = e.target.getBoundingClientRect(); showHint(e.target, r.left + r.width / 2 - 12, r.bottom - 10, true); });
+mapBox.addEventListener('focusout', () => { if (!cursor) hint.style.display = 'none'; });
+window.addEventListener('scroll', () => { hint.style.display = 'none'; }, {passive: true});
+
+// --- charts with a reading on hover ----------------------------------------------------------
+const tooltip = document.getElementById('tooltip');
+function showTooltip(x, y, rows, caption) {
+  tooltip.replaceChildren(...rows.map(([value, name, nr]) => el('div', {}, el('i', {class: 'key' + (nr ? ' s2' : '')}), el('b', {}, value), name || '')),
+    el('div', {class: 'when'}, caption));
+  tooltip.style.display = 'block';
+  const r = tooltip.getBoundingClientRect();
+  let lx = x + 14, ly = y - r.height - 12;
+  if (lx + r.width > innerWidth - 8) lx = x - r.width - 14;
+  if (ly < 8) ly = y + 18;
+  tooltip.style.left = Math.max(8, lx) + 'px';
+  tooltip.style.top = ly + 'px';
+}
+const hideTooltip = () => { tooltip.style.display = 'none'; };
+function spark(series, {min = 0, max = null, floor = 0, format = v => fmt(v), names = [], label = ''} = {}) {
+  const svg = sv('svg', {viewBox: '0 0 300 40', preserveAspectRatio: 'none', 'aria-hidden': 'true'});
+  const cur = el('i', {class: 'cursor'}), points = series.map((_, nr) => el('i', {class: 'point' + (nr ? ' s2' : '')}));
+  const lastValues = series.map(v => [...v].reverse().find(x => x != null));
+  const wrap = el('div', {class: 'spark', tabindex: '0', role: 'img',
+    'aria-label': `${label}, last 5 minutes, now ${series.map((_, i) => (names[i] ? names[i] + ' ' : '') + format(lastValues[i])).join(', ')}`}, svg, cur, points);
+  const all = series.flat().filter(v => v != null);
+  if (all.length < 2) return wrap;
+  const hi = Math.max(max ?? -Infinity, floor, ...all), lo = Math.min(min, ...all), range = hi - lo || 1;
+  const step = 300 / (HISTORY - 1), len = Math.max(...series.map(v => v.length)), shift = HISTORY - len;
+  const yy = v => 39 - 37 * (v - lo) / range;
+  series.forEach((v, nr) => {
+    const p0 = HISTORY - v.length;
+    const pts = v.map((x, i) => x == null ? null : [(p0 + i) * step, yy(x)]).filter(Boolean);
+    if (pts.length < 2) return;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    if (nr === 0 && series.length === 1) svg.append(sv('path', {class: 'area', d: `${d} L${pts[pts.length - 1][0].toFixed(1)} 40 L${pts[0][0].toFixed(1)} 40 Z`}));
+    svg.append(sv('path', {class: 'line' + (nr ? ' s2' : ''), d}));
+  });
+  let currentIndex = len - 1;
+  const show = (i, ex, ey) => {
+    currentIndex = i = Math.max(0, Math.min(len - 1, i));
+    const r = wrap.getBoundingClientRect(), h = r.height - 4, px = (shift + i) * step / 300 * r.width;
+    cur.style.left = px + 'px';
+    const rows = [];
+    series.forEach((v, nr) => {
+      const x = v[i - (len - v.length)];
+      points[nr].style.display = x == null ? 'none' : '';
+      if (x == null) return;
+      points[nr].style.left = px + 'px';
+      points[nr].style.top = 4 + yy(x) / 40 * h + 'px';
+      rows.push([format(x), names[nr], nr]);
+    });
+    wrap.classList.add('active');
+    showTooltip(ex ?? r.left + px, ey ?? r.top, rows, ago((len - 1 - i) * HISTORY_STEP));
+  };
+  const hide = () => { wrap.classList.remove('active'); hideTooltip(); };
+  wrap.addEventListener('pointerenter', () => { pointerOver = wrap; });
+  wrap.addEventListener('pointerleave', () => { if (pointerOver === wrap) pointerOver = null; hide(); });
+  wrap.addEventListener('pointermove', e => {
+    const r = wrap.getBoundingClientRect();
+    show(Math.round((e.clientX - r.left) / r.width * 300 / step - shift), e.clientX, e.clientY);
+  });
+  wrap.addEventListener('focus', () => show(currentIndex));
+  wrap.addEventListener('blur', hide);
+  wrap.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); show(currentIndex + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 15 : 1)); }
+    else if (e.key === 'Escape') { hide(); wrap.blur(); }
+  });
+  return wrap;
+}
+
+// --- logins: fetched only when an app's details open, never in privacy mode ------------------
+let logins = null, loginsTime = 0, loginsLoading = false;
+async function fetchLogins() {
+  if (privateMode || loginsLoading || (logins && Date.now() - loginsTime < 60000)) return;
+  loginsLoading = true;
+  try {
+    const resp = await fetch('/api/logins', {cache: 'no-store'});
+    logins = (await resp.json()).logins || [];
+  } catch (e) { logins = logins || []; }
+  loginsTime = Date.now();
+  loginsLoading = false;
+  if (privateMode) logins = null;
+  else if (opened && opened.startsWith('service:')) renderDetails(latest, false);
+}
+function serviceLogins(x) {
+  if (privateMode) return null;
+  if (!logins) { fetchLogins(); return [el('div', {class: 'd-faint'}, 'Loading…')]; }
+  const name = x.name.toLowerCase(), list = logins.filter(l => (l.service || '').toLowerCase().includes(name));
+  return list.length ? list.map(l => el('div', {class: 'd-login'},
+    el('div', {class: 'd-login-name'}, l.service || ''),
+    el('div', {class: 'd-login-data'}, l.login ? el('span', {class: 'mono'}, l.login) : null, l.password ? el('code', {class: 'password'}, l.password) : el('span', {class: 'hidden-value'}, 'no password in the file')),
+    l.notes ? el('div', {class: 'd-login-notes'}, l.notes) : null)) : null;
+}
+
+// --- speed test ------------------------------------------------------------------------------
+// The browser measures the link it uses to reach the server right now (LAN cable or Tailscale). The server
+// measures the internet itself (/api/test/internet) – the browser would measure this device's internet instead.
+const TEST_S = 4;  // seconds of download and as many of upload
+const TEST_HEADERS = {'X-Labmap': '1'};
+const test = {me: null, result: null, running: null, error: null, internet: null, timer: null, drawn: 0};
+const serverNow = () => (latest && latest.time) || Date.now() / 1000;  // the server's clock – both tests count age the same way
+const mbit = b => b == null || isNaN(b) ? '—' : fmt(b * 8 / 1e6, b * 8 / 1e6 < 10 ? 1 : 0);
+async function whoAmI() {  // which link this browser uses to reach the server
+  try {
+    const resp = await fetch('/api/test/whoami', {headers: TEST_HEADERS, cache: 'no-store'});
+    test.me = resp.ok ? await resp.json() : {via: 'other'};
+  } catch (_) { test.me = {via: 'other'}; }
+  return test.me;
+}
+async function measurePing() {  // from sending the request to the first byte of the answer – without opening a connection
+  performance.clearResourceTimings();
+  const times = [];
+  for (let i = 0; i < 5; i++) {
+    const url = new URL(`/api/test/whoami?ping=${i}`, location.href).href, t0 = performance.now();
+    await fetch(url, {headers: TEST_HEADERS, cache: 'no-store'});
+    const r = performance.getEntriesByName(url).pop();
+    times.push(r && r.responseStart > r.requestStart ? r.responseStart - r.requestStart : performance.now() - t0);
+  }
+  return Math.min(...times);
+}
+async function measureDownload(progress) {
+  const ac = new AbortController(), timer = setTimeout(() => ac.abort(), (TEST_S + 4) * 1000);
+  let received = 0, t0 = performance.now(), t = t0, start = null, fromStart = 0;
+  try {
+    const resp = await fetch('/api/test/download', {headers: TEST_HEADERS, cache: 'no-store', signal: ac.signal});
+    if (!resp.ok) throw new Error(resp.status === 429 ? 'another test is running – try again in a moment' : 'the server answered ' + resp.status);
+    const reader = resp.body.getReader();
+    t0 = t = performance.now();
+    while (t - t0 < TEST_S * 1000) {
+      const {done, value} = await reader.read();
+      t = performance.now();
+      if (done) break;
+      received += value.length;
+      if (start === null && t - t0 > 400) { start = t; fromStart = received; }  // the first moments are TCP ramping up
+      else if (start !== null) progress((received - fromStart) / ((t - start) / 1000));
+    }
+  } catch (e) {
+    if (!received) throw e;  // cut short halfway – what arrived still counts
+  } finally {
+    clearTimeout(timer);
+    ac.abort();
+  }
+  return start !== null && t - start > 200 ? (received - fromStart) / ((t - start) / 1000) : received / Math.max(1e-3, (t - t0) / 1000);
+}
+function sendChunk(chunk, progress) {
+  const x = new XMLHttpRequest();
+  const done = new Promise((ok, fail) => {
+    x.open('POST', '/api/test/upload');
+    x.setRequestHeader('X-Labmap', '1');
+    x.upload.onprogress = e => progress(e.loaded);
+    x.onload = () => x.status === 200 ? ok() : fail(new Error(x.status === 429 ? 'another test is running – try again in a moment' : 'the server answered ' + x.status));
+    x.onerror = x.onabort = () => fail(new Error('connection lost'));
+    x.send(chunk);
+  });
+  return [x, done];
+}
+async function measureUpload(progress) {
+  // chunks of about half a second; only those the server fully received count (the OS buffer would inflate the result)
+  const MB = 2 ** 20, rnd = new Uint8Array(MB);
+  for (let i = 0; i < MB; i += 65536) crypto.getRandomValues(rnd.subarray(i, i + 65536));
+  const t0 = performance.now();
+  let sent = 0, size = 1, end = t0;
+  while (performance.now() - t0 < TEST_S * 1000) {
+    const tc = performance.now();
+    const [x, done] = sendChunk(new Blob(Array(size).fill(rnd)), n => progress((sent + n) / ((performance.now() - t0) / 1000)));
+    const timer = setTimeout(() => x.abort(), Math.max(1500, (TEST_S + 3) * 1000 - (tc - t0)));
+    try { await done; } catch (e) { if (!sent) throw e; break; } finally { clearTimeout(timer); }
+    sent += size * MB;
+    end = performance.now();
+    size = Math.min(32, Math.max(1, 2 ** Math.round(Math.log2(size * 0.5 / ((end - tc) / 1000)))));
+  }
+  return sent / ((end - t0) / 1000);
+}
+async function browserTest() {
+  if (test.running) return;
+  const via = (test.me || await whoAmI()).via;
+  test.running = {via, stage: 'download'};
+  test.error = null;
+  refreshTest();
+  try {
+    const ping = await measurePing();
+    const download = await measureDownload(v => { test.running.download = v; refreshTest(true); });
+    test.running = {...test.running, stage: 'upload', download};
+    refreshTest();
+    const upload = await measureUpload(v => { test.running.upload = v; refreshTest(true); });
+    test.result = {via, ping, download, upload, time: serverNow()};
+  } catch (e) {
+    test.error = {via, text: e.message || String(e)};
+  } finally {
+    test.running = null;
+    refreshTest();
+  }
+}
+async function internetTest(start) {
+  clearTimeout(test.timer);
+  try {
+    const resp = await fetch('/api/test/internet', {method: start ? 'POST' : 'GET', headers: TEST_HEADERS, cache: 'no-store'});
+    if (!resp.ok) throw new Error();
+    test.internet = await resp.json();
+  } catch (_) {
+    test.internet = {...test.internet, running: false, error: {text: 'no connection to the server', time: Date.now() / 1000}};
+  }
+  refreshTest();
+  if (test.internet.running && opened === 'wifi') test.timer = setTimeout(() => internetTest(false), 1000);
+  return test.internet;
+}
+function startTests(key) {  // when a network's details open: a short test, unless there's a fresh result
+  if (key === 'wifi') internetTest(false).then(d => {
+    const r = d && d.result;
+    if (d && !d.running && (!r || d.now - r.time > 600)) internetTest(true);
+  });
+  if (key === 'lan' || key === 'tailscale') whoAmI().then(me => {
+    const r = test.result;
+    if (me.via === key && opened === key && (!r || r.via !== key || serverNow() - r.time > 120)) browserTest();
+    else refreshTest();
+  });
+}
+function refreshTest(often) {  // swaps only the test box – progress shows right away, not every 3 s
+  const e = document.getElementById('d-test');
+  if (!e || !opened || !latest) return;
+  if (often && performance.now() - test.drawn < 150) return;
+  test.drawn = performance.now();
+  e.replaceWith(testBox(opened, latest));
+}
+function testNumber(label, value, {waiting, current, max} = {}) {
+  return el('div', {class: waiting ? 'waiting' : current ? 'current' : null}, el('span', {}, label),
+    el('b', {}, waiting && value == null ? '…' : mbit(value), el('small', {}, 'Mb/s')),
+    max ? el('div', {class: 'd-test-max'}, max) : null);
+}
+function testButton(running, start) {
+  const b = el('button', {class: 'd-button', type: 'button', disabled: running ? 'disabled' : null}, running ? 'Measuring…' : 'Measure again');
+  b.addEventListener('click', start);
+  return b;
+}
+function testBox(key, s) {
+  const n = s.network || {}, age = ts => ago((s.time || Date.now() / 1000) - ts);
+  if (key === 'wifi') {
+    const d = test.internet, link = (n.wifi || {}).link || {};
+    const r = d && d.result, running = !d || d.running, error = d && d.error && (!r || d.error.time > r.time) ? d.error : null;
+    return el('div', {class: 'd-test', id: 'd-test'},
+      el('div', {class: 'd-test-numbers'},
+        testNumber('Download', r && !running ? r.download : null, {waiting: running, max: link.download ? `Wi-Fi link ${speed(link.download)}` : null}),
+        testNumber('Upload', r && !running ? r.upload : null, {waiting: running, max: link.upload ? `Wi-Fi link ${speed(link.upload)}` : null})),
+      error && !running ? el('div', {class: 'd-test-error'}, "Couldn't measure: " + error.text) : null,
+      el('div', {class: 'd-test-bottom'},
+        el('span', {}, running ? 'the server is testing the internet, about 15 s…' : r ? [r.ping_ms != null ? `latency ${fmt(r.ping_ms)} ms` : null, age(r.time)].filter(Boolean).join(' · ') : ''),
+        testButton(running, () => internetTest(true))));
+  }
+  const me = test.me, name = {lan: 'the LAN cable', tailscale: 'Tailscale'}[key];
+  if (!me) return el('div', {class: 'd-test', id: 'd-test'}, el('div', {class: 'd-test-bottom', style: 'margin:0;padding:0;border:0'}, 'checking how you are connected…'));
+  if (me.via !== key) {
+    const via = {lan: 'the LAN cable', tailscale: 'Tailscale', local: 'the server itself'}[me.via];
+    const server = (s.host || {}).name || 'server';
+    const tip = key === 'lan' ? 'open LabMap on a device connected by cable' + (privateMode ? '' : ` (http://${server}.local)`)
+      : 'open LabMap on a device in your tailnet' + (privateMode ? '' : ` (http://${server})`);
+    return el('div', {class: 'd-alert info', id: 'd-test'},
+      me.via === 'local' ? 'LabMap is open on the server itself – there is nothing to measure here.'
+        : `${via ? `You are connected through ${via}, so` : "Can't tell how you are connected, so"} ${name} can't be measured from here. To measure it, ${tip}.`);
+  }
+  const t = test.running && test.running.via === key ? test.running : null, r = test.result && test.result.via === key ? test.result : null;
+  const error = test.error && test.error.via === key && !t ? test.error : null;
+  const lanMax = key === 'lan' && (n.lan || {}).speed ? `link ${speed(n.lan.speed)}` : null;
+  return el('div', {class: 'd-test', id: 'd-test'},
+    el('div', {class: 'd-test-numbers'},
+      testNumber('Download from server', t ? t.download : r && r.download, {waiting: t && t.stage !== 'download', current: t && t.stage === 'download', max: lanMax}),
+      testNumber('Upload to server', t ? t.upload : r && r.upload, {waiting: t && t.stage !== 'upload', current: t && t.stage === 'upload', max: lanMax})),
+    error ? el('div', {class: 'd-test-error'}, "Couldn't measure: " + error.text) : null,
+    el('div', {class: 'd-test-bottom'},
+      el('span', {}, t ? `measuring ${t.stage}…` : r ? [`latency ${fmt(r.ping, r.ping < 10 ? 1 : 0)} ms`, age(r.time)].join(' · ') : ''),
+      testButton(!!test.running, browserTest)));
+}
+
+// --- details after clicking a map element ---------------------------------------------------
+let opened = null, openedByKeyboard = false;
+const pair = (label, value) => el('div', {class: 'd-pair'}, el('dt', {}, label), el('dd', {}, value));
+const section = (title, ...pairs) => el('section', {class: 'd-section'}, el('h3', {}, title), el('dl', {}, pairs));
+const stateLine = (state, text) => el('div', {class: 'd-state st-' + st(state)}, el('i', {class: 'dot'}), text);
+function chart(title, now, sparkline, names) {
+  return el('div', {class: 'd-chart'},
+    el('div', {class: 'd-chart-top'}, el('span', {}, title + ' · 5 min'), el('b', {}, now)), sparkline,
+    names ? el('div', {class: 'd-chart-bottom'}, names.map((n, i) => el('span', {class: 'legend-key' + (i ? ' s2' : '')}, n))) : null);
+}
+const trafficChart = (rx, tx, label) => spark([rx || [], tx || []], {floor: 50e3, format: rate, names: ['received', 'sent'], label});
+function containerRow(k, now) {
+  const state = !k.state || k.state === 'missing' ? 'error' : k.state !== 'running' ? 'error' : k.health === 'unhealthy' ? 'warning' : 'ok';
+  const desc = k.state === 'running' ? [k.health === 'unhealthy' ? 'failing health check' : k.health === 'starting' ? 'starting' : 'running',
+    k.since ? duration(now - k.since) : null, k.restarts ? count(k.restarts, 'restart', 'restarts') : null].filter(Boolean).join(' · ')
+    : CONTAINER_STATE[k.state || 'missing'] || k.state;
+  return el('div', {class: 'd-pair'}, el('dt', {}, el('i', {class: 'dot st-' + state}), el('span', {class: 'mono'}, k.name)), el('dd', {}, desc));
+}
+const DETAILS = {
+  server(s) {
+    const t = s.now || {}, h = s.host || {}, p = s.memory || {}, d = s.system_disk || {}, his = s.history || {}, n = s.network || {};
+    const ram = p.total ? p.total - p.available : null, swap = p.swap_total ? p.swap_total - p.swap_free : 0;
+    const conts = s.containers || [], inApps = new Set((s.services || []).flatMap(x => (x.containers || []).map(k => k.name)));
+    const others = conts.filter(k => !inApps.has(k.name)), now = s.time || Date.now() / 1000;
+    const port = s.port && s.port !== 80 ? ':' + s.port : '', addresses = [], lanIp = (n.ip || {})[(n.interfaces || {}).lan];
+    if (n.mdns) addresses.push([`${h.name}.local${port}`, 'LAN (mDNS)']);
+    if (lanIp) addresses.push([`${lanIp}${port}`, 'LAN – by IP']);
+    if ((n.tailscale || {}).running) addresses.push([`${h.name}${port}`, 'Tailscale – also away from home']);
+    return {title: serverTitle(s), icon: 'laptop', body: [
+      showAlerts(s, 'server'),
+      chart('CPU', `${fmt(t.cpu)}%`, spark([his.cpu || []], {max: 100, format: v => fmt(v, 1) + '%', label: 'CPU'})),
+      chart('Temperature', `${fmt(t.temp)} °C`, spark([his.temp || []], {min: 30, max: 70, format: v => fmt(v, 1) + ' °C', label: 'Temperature'})),
+      section('Resources',
+        pair('Memory', `${bytes(ram)} of ${bytes(p.total)}`),
+        pair('Swap', swap > 1e8 ? bytes(swap) : 'unused'),
+        pair('System disk', `${bytes(d.used)} of ${bytes(d.total)}`),
+        pair('Disk temperature', d.temp != null ? `${fmt(d.temp)} °C` : '—'),
+        pair('Fan', s.fan ? `${fmt(s.fan)} rpm` : 'off')),
+      section('Hardware and system',
+        pair('Name', h.name || '—'),
+        pair('Model', h.model || '—'),
+        pair('CPU', [h.cpu, h.threads ? count(h.threads, 'thread', 'threads') : null].filter(Boolean).join(' · ')),
+        pair('OS', secret(h.os)),
+        pair('Kernel', secret(h.kernel)),
+        pair('Uptime', duration(h.uptime)),
+        pair('Load (1 / 5 / 15 min)', (h.load || []).map(x => fmt(x, 2)).join(' / ') || '—')),
+      section('Docker',
+        pair('Containers', conts.length ? `${conts.filter(k => k.state === 'running').length} of ${conts.length} running` : (s.errors || {}).containers ? "Docker isn't responding" : '—'),
+        others.map(k => containerRow(k, now))),
+      privateMode || !addresses.length ? null : section('LabMap address', addresses.map(([a, desc]) => pair(desc, el('a', {href: `http://${a}/`}, a))))]};
+  },
+  power(s) {
+    const z = s.power || {}, b = z.battery || {}, usb = z.usb_c || {}, ps = powerState(s), a = alertsFor(s, 'power');
+    return {title: 'Power', icon: 'charger', body: [
+      a.length ? showAlerts(s, 'power') : el('div', {class: 'd-actions'}, stateLine(ps.state, ps.state === 'ok' ? 'all good' : 'needs attention')),
+      section('USB-C charger',
+        pair('State', z.charger ? 'plugged in' : 'unplugged'),
+        pair('Power', usb.power ? `${fmt(usb.power)} W` : '—'),
+        pair('Voltage and current', usb.voltage ? `${fmt(usb.voltage)} V · ${fmt(usb.current, 1)} A` : '—'),
+        pair('Needed', '45–65 W')),
+      z.battery ? section('Battery',
+        pair('Level', `${fmt(b.percent)}%`),
+        pair('State', batteryStatus(b)),
+        pair('Time left', b.hours_left ? `about ${fmt(b.hours_left, 1)} h` : '—'),
+        pair('Charging', b.thresholds && b.thresholds[1] ? `from ${fmt(b.thresholds[0])} to ${fmt(b.thresholds[1])}% (protects the battery)` : '—'),
+        pair('Power', b.power ? `${fmt(b.power, 1)} W` : '—'),
+        pair('Health', `${fmt(b.health)}%`),
+        pair('Cycles', fmt(b.cycles))) : section('Battery', pair('State', 'no battery'))]};
+  },
+  wifi(s) {
+    const t = s.now || {}, n = s.network || {}, w = n.wifi || {}, his = s.history || {};
+    return {title: 'Wi-Fi', icon: 'wifi', body: [
+      showAlerts(s, 'wifi'),
+      el('div', {class: 'd-actions'}, stateLine(w.connected ? 'ok' : 'error', w.connected ? 'connected – the server’s internet' : 'disconnected – no internet')),
+      w.connected ? section('Internet speed', testBox('wifi', s)) : null,
+      chart('Traffic', `↓ ${rate(t.wifi_rx)}  ↑ ${rate(t.wifi_tx)}`, trafficChart(his.wifi_rx, his.wifi_tx, 'Wi-Fi'), ['received', 'sent']),
+      section('Connection',
+        pair('Signal', w.signal_dbm != null ? signal(w.signal_dbm) : '—'),
+        pair('Link speed', w.link && w.link.download ? `↓ ${speed(w.link.download)} · ↑ ${speed(w.link.upload)}` : '—'),
+        pair('IP address', secret((n.ip || {})[(n.interfaces || {}).wifi])))]};
+  },
+  tailscale(s) {
+    const t = s.now || {}, ts = (s.network || {}).tailscale || {}, his = s.history || {}, me = test.me;
+    return {title: 'Tailscale', icon: 'mesh', body: [
+      showAlerts(s, 'tailscale'),
+      el('div', {class: 'd-actions'}, stateLine(ts.running ? 'ok' : 'warning', ts.running ? 'running – reachable away from home' : 'off – not reachable away from home')),
+      ts.running ? section('Speed to this device', testBox('tailscale', s)) : null,
+      chart('Traffic', `↓ ${rate(t.ts_rx)}  ↑ ${rate(t.ts_tx)}`, trafficChart(his.ts_rx, his.ts_tx, 'Tailscale'), ['received', 'sent']),
+      section('Private network',
+        me && me.via === 'tailscale' && me.name ? pair('This device', secret(me.name)) : null,
+        me && me.via === 'tailscale' && me.name ? pair('Connection to it', me.direct ? 'direct'
+          : `through a Tailscale relay${me.relay ? ` (${me.relay})` : ''} – slower`) : null,
+        pair('Devices online', ts.running ? `${ts.online} of ${ts.devices}` : '—'),
+        pair('Address', secret(ts.ip)),
+        pair('Name', secret(ts.name)))]};
+  },
+  lan(s) {
+    const t = s.now || {}, n = s.network || {}, k = n.lan || {}, his = s.history || {}, client = (k.clients || [])[0];
+    return {title: 'LAN cable', icon: 'ethernet', body: [
+      showAlerts(s, 'lan'),
+      el('div', {class: 'd-actions'}, stateLine(k.connected ? 'ok' : 'none', k.connected ? 'plugged in' : 'unplugged')),
+      k.connected ? section('Speed to this device', testBox('lan', s)) : null,
+      chart('Traffic', `↓ ${rate(t.lan_rx)}  ↑ ${rate(t.lan_tx)}`, trafficChart(his.lan_rx, his.lan_tx, 'LAN cable'), ['received', 'sent']),
+      section('Connection',
+        pair('Link speed', speed(k.speed)),
+        pair('Connected device', client ? secret(`${client.name || 'device'} (${client.ip})`) : '—'),
+        pair('Server address', secret((n.ip || {})[(n.interfaces || {}).lan])))]};
+  },
+  raid(s) {
+    const t = s.now || {}, r = s.raid || {}, m = r.space, his = s.history || {};
+    const pRaid = m ? (m.percent ?? percent(m.used, m.total)) : null, [disks, disksSt] = disksSummary(r);
+    return {title: raidTitle(r), icon: 'disk', body: [
+      showAlerts(s, 'raid'),
+      el('div', {class: 'd-actions'}, stateLine(!r.exists || !r.mounted ? 'error' : disksSt, !r.exists ? "can't find the array" : !r.mounted ? 'not mounted' : disks)),
+      chart('Read and write', `${rate(t.raid_read)} · ${rate(t.raid_write)}`,
+        spark([his.raid_read || [], his.raid_write || []], {floor: 5e6, format: rate, names: ['read', 'write'], label: raidTitle(r)}), ['read', 'write']),
+      section('Space',
+        pair('Used', m ? `${bytes(m.used)} · ${fmt(pRaid)}%` : '—'),
+        pair('Free', m ? bytes(m.free) : '—'),
+        pair('Capacity', m ? bytes(m.total) : '—')),
+      section('Disks',
+        ...(r.disks || []).map(d => pair(d.name, [(d.model || '').replace(/^WDC\s*/, ''), d.size ? bytes(d.size) : null, diskState(d.state, r)[0],
+          d.temp != null ? `${fmt(d.temp)} °C` : null].filter(Boolean).join(' · '))),
+        r.level === 'raid1' ? pair('Type', 'mirror – the same data on both disks, not a backup') : null,
+        r.mismatches ? pair('Mismatched sectors', fmt(r.mismatches)) : null)]};
+  },
+};
+function serviceDetails(s, name) {
+  const x = (s.services || []).find(v => v.name === name);
+  if (!x) return {title: name, icon: 'app', body: [stateLine('none', 'this app is no longer in services.json')]};
+  const d = x.data || {}, href = serviceLink(x), now = s.time || Date.now() / 1000;
+  const byName = new Map((s.containers || []).map(k => [k.name, k]));
+  const state = withAlerts(st(x.state), s, 'service:' + name), queues = Object.entries(d.queues || {}).sort((a, b) => b[1] - a[1]);
+  const accounts = serviceLogins(x);
+  const newTab = !!href && /^https?:/.test(href);
+  return {title: x.name, icon: x.icon, color: color(x.color), body: [
+    showAlerts(s, 'service:' + name),
+    el('div', {class: 'd-actions'}, stateLine(state, STATE[state]),
+      href ? el('a', {class: 'd-open', href, target: newTab ? '_blank' : null, rel: newTab ? 'noopener' : null}, 'Open', icon('open')) : null),
+    x.description ? el('p', {class: 'd-desc'}, x.description) : null,
+    x.type === 'immich' ? section('Library',
+      d.stats ? [pair('Photos', fmt(d.stats.photos)), pair('Videos', fmt(d.stats.videos))]
+        : pair('Photos and videos', d.no_key ? 'no API key in secrets.json' : 'no data'),
+      queues.length ? pair('Processing', queues.slice(0, 3).map(([k, n]) => `${QUEUES[k] || k} (${fmt(n)})`).join(', ')) : null,
+      d.last_backup ? pair('Database backup', when(d.last_backup)) : null) : null,
+    x.type === 'nextcloud' && d.maintenance ? section('State', pair('Maintenance mode', 'on')) : null,
+    section('Access',
+      pair('Address', privateMode ? secret() : address(x) ? el('span', {class: 'mono'}, addressShort(x)) : '—'),
+      x.type === 'samba' && onIOS ? pair('On iPhone', 'Files → ⋯ → Connect to Server') : null,
+      d.version ? pair('Version', secret(d.version)) : null),
+    accounts ? section('Login', accounts) : null,
+    (x.containers || []).length ? section('Containers', x.containers.map(k => containerRow({...k, ...byName.get(k.name)}, now))) : null]};
+}
+function renderDetails(s, fresh) {
+  if (!opened || !s || !s.ready) return;
+  const def = opened.startsWith('service:') ? serviceDetails(s, opened.slice(8)) : DETAILS[opened] ? DETAILS[opened](s) : null;
+  if (!def) return;
+  document.getElementById('d-title').textContent = def.title;
+  const ic = document.getElementById('d-icon');
+  ic.style.setProperty('--k', def.color || 'var(--ink-2)');
+  ic.replaceChildren(icon(def.icon));
+  if (fresh) document.getElementById('d-body').replaceChildren(...build(document.createElement('div'), {}, def.body).childNodes);
+  else replace('d-body', def.body);
+}
+function openDetails(key, byKeyboard) {
+  opened = key;
+  openedByKeyboard = byKeyboard;
+  renderDetails(latest, true);
+  startTests(key);
+  document.getElementById('scrim').hidden = false;
+  document.getElementById('details').hidden = false;
+  document.getElementById('d-body').scrollTop = 0;
+  document.getElementById('d-close').focus({preventScroll: true});
+}
+function closeDetails() {
+  if (!opened) return;
+  const key = opened;
+  opened = null;
+  pointerOver = null;
+  hideTooltip();
+  document.getElementById('scrim').hidden = true;
+  document.getElementById('details').hidden = true;
+  const e = openedByKeyboard && [...document.querySelectorAll('#map [data-key]')].find(x => x.dataset.key === key);
+  if (e) e.focus(); else if (document.activeElement) document.activeElement.blur();
+}
+document.getElementById('d-close').addEventListener('click', closeDetails);
+document.getElementById('scrim').addEventListener('click', closeDetails);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && opened) closeDetails(); });
+
+// --- main loop ---------------------------------------------------------------------------------
+// The dot in the logo and in the browser tab shows the worst state, so a problem is visible from another tab too.
+const BRAND_COLOR = {ok: '#12b312', warning: '#fab219', error: '#e5484d', offline: '#6b7482'};
+let brandState = '';
+function setBrandState(state) {
+  if (state === brandState) return;
+  brandState = state;
+  document.getElementById('logo').className = 'logo st-' + state;
+  const c = BRAND_COLOR[state];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#0f1218"/>` +
+    `<rect x="16.25" y="11" width="9" height="42" rx="4.5" fill="#fff"/><circle cx="39.25" cy="44.5" r="12" fill="${c}" opacity=".22"/>` +
+    `<circle cx="39.25" cy="44.5" r="8.5" fill="${c}"/></svg>`;
+  document.getElementById('favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+function render(s) {
+  const h = s.host || {};
+  document.getElementById('hostname').textContent = h.name || 'LabMap';
+  document.title = h.name ? `${h.name} · LabMap` : 'LabMap';
+  const alerts = s.alerts || [];
+  setBrandState(alerts.some(a => a.level === 'error') ? 'error' : alerts.some(a => a.level === 'warning') ? 'warning' : 'ok');
+  document.getElementById('clock').textContent = new Date((s.time || Date.now() / 1000) * 1000).toLocaleTimeString();
+  if (!s.ready) return;  // the first second after startup: the slow data is still being collected
+  drawMap(s);
+  if (opened) renderDetails(s, false);
+}
+let loading = false;
+async function refresh() {
+  if ((document.hidden && latest) || loading) return;
+  loading = true;
+  const ac = new AbortController(), timer = setTimeout(() => ac.abort(), 6000);  // a dead server won't freeze the page
+  try {
+    const resp = await fetch('/api/state', {cache: 'no-store', signal: ac.signal});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    latest = await resp.json();
+  } catch (e) {
+    document.body.classList.add('offline');
+    setBrandState('offline');
+    document.getElementById('clock').textContent = 'no connection to the server';
+    return;
+  } finally {
+    clearTimeout(timer);
+    loading = false;
+  }
+  document.body.classList.remove('offline');
+  try { render(latest); } catch (e) { console.error('LabMap failed to draw the page:', e); }  // a page error isn't a lost connection
+  if (!latest.ready) setTimeout(refresh, 800);
+}
+let lastWidth = 0;
+window.addEventListener('resize', () => {
+  const w = document.getElementById('map').clientWidth;
+  if (latest && latest.ready && Math.abs(w - lastWidth) > 20) { lastWidth = w; drawMap(latest); }
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+window.addEventListener('scroll', hideTooltip, {passive: true});
+setPrivacy(privateMode);
+refresh();
+setInterval(refresh, REFRESH);
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "_note": "Optional. Rename to logins.json to show these logins in an app's details. Matched by app name (\"service\" must contain it). Stored in plain text and never shown in privacy mode.",
+  "logins": [
+    {"service": "Immich – admin", "login": "admin@example.com", "password": "change-me", "notes": "Change after the first login."},
+    {"service": "Samba – share “media”", "login": "alex", "password": "change-me"}
+  ]
+}

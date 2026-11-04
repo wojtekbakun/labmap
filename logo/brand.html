@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LabMap brand</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px; background: #eceef2; font-family: Manrope, sans-serif; color: #0f1218; width: 1280px; }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; }
+  .lead { margin: 0 0 26px; color: #4a5160; font-size: 15px; }
+  .row { display: grid; gap: 18px; margin-bottom: 18px; }
+  .k { background: #fff; border: 1px solid #e1e4ea; border-radius: 18px; padding: 22px; }
+  .k.c { background: #0f1217; border-color: #1e232c; color: #e8ebf0; }
+  .t { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #7c8492; margin-bottom: 16px; }
+  .center { display: flex; align-items: center; justify-content: center; gap: 22px; min-height: 150px; }
+  .states { display: flex; justify-content: space-around; }
+  .state { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; }
+  .state span { color: #7c8492; font-weight: 500; font-size: 12.5px; }
+  .swatches { display: flex; gap: 12px; }
+  .swatch { flex: 1; }
+  .swatch i { display: block; height: 58px; border-radius: 10px; border: 1px solid rgba(0,0,0,.08); margin-bottom: 8px; }
+  .swatch b { display: block; font-size: 13.5px; } .swatch span { font-size: 12.5px; color: #7c8492; font-family: ui-monospace, monospace; }
+  .tabs { display: flex; gap: 6px; }
+  .tab { display: flex; align-items: center; gap: 8px; background: #f5f6f8; border: 1px solid #e1e4ea; border-bottom: 0; border-radius: 10px 10px 0 0; padding: 9px 14px; font-size: 13px; width: 190px; }
+  .tab img { width: 16px; height: 16px; }
+  .note { font-size: 13.5px; color: #4a5160; line-height: 1.5; margin-top: 14px; }
+  .lock { display: inline-flex; align-items: center; gap: 18px; } .lock img { width: 76px; height: 76px; }
+  .lock b { font-size: 54px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+</style>
+</head>
+<body>
+<h1>LabMap — brand</h1>
+<p class="lead">A white “l” for lab and a status light. The dot in the app’s logo and in the browser tab changes color with the server’s state.</p>
+
+<div class="row" style="grid-template-columns: 1fr 1.6fr 1.6fr">
+  <div class="k"><div class="t">Icon</div><div class="center"><img src="labmap-icon.svg" width="150" height="150"></div></div>
+  <div class="k"><div class="t">Logo on light</div><div class="center"><span class="lock"><img src="labmap-icon.svg"><b>LabMap</b></span></div></div>
+  <div class="k c"><div class="t">Logo on dark</div><div class="center"><span class="lock"><img src="labmap-icon-outline.svg"><b>LabMap</b></span></div></div>
+</div>
+
+<div class="row" style="grid-template-columns: 1.7fr 1fr">
+  <div class="k">
+    <div class="t">The dot is the server’s state</div>
+    <div class="states">
+      <div class="state"><img src="labmap-icon.svg" width="84">OK<span>everything works</span></div>
+      <div class="state"><img src="labmap-icon-warning.svg" width="84">Warning<span>something needs attention</span></div>
+      <div class="state"><img src="labmap-icon-error.svg" width="84">Down<span>something is broken</span></div>
+      <div class="state"><img src="labmap-icon-offline.svg" width="84">Offline<span>the server doesn’t answer</span></div>
+    </div>
+  </div>
+  <div class="k">
+    <div class="t">Browser tab</div>
+    <div class="tabs">
+      <div class="tab"><img src="labmap-icon.svg">homelab</div>
+    </div>
+    <div class="tabs" style="margin-top:10px">
+      <div class="tab"><img src="labmap-icon-error.svg">homelab</div>
+    </div>
+    <div class="note">You see a failure even when LabMap sits in a background tab.</div>
+  </div>
+</div>
+
+<div class="row" style="grid-template-columns: 1.7fr 1fr">
+  <div class="k">
+    <div class="t">Colors</div>
+    <div class="swatches">
+      <div class="swatch"><i style="background:#0f1218"></i><b>Graphite</b><span>#0f1218</span></div>
+      <div class="swatch"><i style="background:#ffffff"></i><b>White</b><span>#ffffff</span></div>
+      <div class="swatch"><i style="background:#12b312"></i><b>OK</b><span>#12b312</span></div>
+      <div class="swatch"><i style="background:#fab219"></i><b>Warning</b><span>#fab219</span></div>
+      <div class="swatch"><i style="background:#e5484d"></i><b>Down</b><span>#e5484d</span></div>
+      <div class="swatch"><i style="background:#2a78d6"></i><b>App accent</b><span>#2a78d6</span></div>
+    </div>
+  </div>
+  <div class="k">
+    <div class="t">Type</div>
+    <div style="font-size: 40px; font-weight: 800; letter-spacing: -.02em; line-height: 1">LabMap</div>
+    <div class="note">Manrope ExtraBold, capital L and M, slightly tight. A free font (OFL license).</div>
+  </div>
+</div>
+</body>
+</html>

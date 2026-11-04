@@ -1,0 +1,6 @@
+# your own settings - copy from the *.example.json files
+services.json
+logins.json
+secrets.json
+__pycache__/
+*.pyc

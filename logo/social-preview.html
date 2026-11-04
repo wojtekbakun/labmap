@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LabMap – social preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body { background: #0f1217; font-family: Manrope, sans-serif; color: #e8ebf0; position: relative; }
+  .left { position: absolute; left: 80px; top: 0; bottom: 0; width: 520px; display: flex; flex-direction: column; justify-content: center; }
+  .left img { width: 112px; height: 112px; margin-bottom: 34px; }
+  h1 { margin: 0; font-size: 96px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+  p { margin: 22px 0 0; font-size: 31px; line-height: 1.3; color: #a3abb8; font-weight: 500; }
+  .shot { position: absolute; left: 640px; top: 70px; width: 820px; border-radius: 18px; border: 1px solid #2b313c; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+  <div class="left">
+    <img src="labmap-icon-outline.svg" alt="">
+    <h1>LabMap</h1>
+    <p>A live map of your home server. Problems light up where they are.</p>
+  </div>
+  <img class="shot" src="../docs/map-dark.png" alt="">
+</body>
+</html>
